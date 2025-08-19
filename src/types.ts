@@ -48,3 +48,19 @@ const personIntfSample: PersonInterfaceExtended = {
 interface PersonInterfaceShortened extends Omit<PersonInterface, "birthDate"> {
   lastName: string;
 }
+enum UserRole {
+  ADMIN = "Admin",
+  CLIENT = "Client",
+  SUPER_ADMIN = "SuperAdmin",
+}
+interface Client {
+  userName: string;
+  password: string;
+  role: UserRole;
+}
+
+const clientSample: Client = {
+  userName: "Lucas",
+  password: "1234",
+  role: UserRole.ADMIN,
+};
