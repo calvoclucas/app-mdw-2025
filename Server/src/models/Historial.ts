@@ -2,9 +2,7 @@ import { Schema, model, InferSchemaType, Types } from "mongoose";
 
 const historialSchema = new Schema(
   {
-    id_historial: { type: Number, required: true, unique: true },
-    id_pedido: { type: Number, ref: "Pedido", required: true },
-    estado: { type: String, required: true },
+    id_pedido: { type: Types.ObjectId, ref: "Pedido", required: true },
     fecha: { type: Date, default: Date.now },
   },
   { timestamps: true }
@@ -12,3 +10,5 @@ const historialSchema = new Schema(
 
 export type HistorialType = InferSchemaType<typeof historialSchema>;
 export const Historial = model<HistorialType>("Historial", historialSchema);
+
+export default Historial;
