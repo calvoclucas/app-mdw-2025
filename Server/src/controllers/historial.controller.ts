@@ -3,7 +3,7 @@ import Historial from "../models/Historial";
 
 export const GetHistoriales = async (req: Request, res: Response) => {
   try {
-    const historiales = await Historial.find().populate("id_pedido");
+    const historiales = await Historial.find();
     res.json(historiales);
   } catch (err) {
     console.error(err);
