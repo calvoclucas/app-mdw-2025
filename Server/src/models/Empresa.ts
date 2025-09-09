@@ -1,8 +1,7 @@
-import { Schema, model, InferSchemaType, Types } from "mongoose";
+import { Schema, model, InferSchemaType } from "mongoose";
 
 const empresaSchema = new Schema(
   {
-    id_empresa: { type: Number, required: true, unique: true },
     nombre: { type: String, required: true },
     email: { type: String, required: true, unique: true },
     telefono: { type: String },
@@ -14,4 +13,4 @@ const empresaSchema = new Schema(
 );
 
 export type EmpresaType = InferSchemaType<typeof empresaSchema>;
-export const Empresa = model<EmpresaType>("Empresa", empresaSchema);
+export default model<EmpresaType>("Empresa", empresaSchema);
