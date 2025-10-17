@@ -56,7 +56,7 @@ const Register: React.FC = () => {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-r from-blue-400 to-purple-500 px-4">
       <form
         onSubmit={handleRegister}
-        className="bg-white p-10 rounded-xl shadow-2xl w-full max-w-sm transform transition duration-500 hover:scale-105"
+        className="bg-white p-10 rounded-xl shadow-2xl w-full max-w-xl transform transition duration-500 hover:scale-105"
       >
         <div className="flex justify-center mb-4">
           <img src={logo} alt="Logo" className="w-40 h-auto object-contain" />
