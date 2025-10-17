@@ -1,5 +1,7 @@
 import { Request, Response } from "express";
 import Empresa from "../models/Empresa";
+import User from "../models/User";
+import Direccion from "../models/Direccion";
 
 export const GetEmpresas = async (req: Request, res: Response) => {
   try {
@@ -60,5 +62,31 @@ export const DeleteEmpresa = async (req: Request, res: Response) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Error al eliminar la empresa" });
+  }
+};
+
+export const GetEmpresasConUsuario = async (req: Request, res: Response) => {
+  try {
+    const usuariosEmpresa = await User.find({ role: "empresa" })
+      .populate("empresa")
+      .lean();
+
+    const resultado = await Promise.all(
+      usuariosEmpresa.map(async (user) => {
+        const direccion = await Direccion.findOne({ id_user: user._id }).lean();
+        return {
+          _id: user._id,
+          email: user.email,
+          nombreUsuario: `${user.name} ${user.lastName}`,
+          empresa: user.empresa,
+          direccion,
+        };
+      })
+    );
+
+    res.json(resultado);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Error al obtener empresas con usuario" });
   }
 };

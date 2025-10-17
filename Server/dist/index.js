@@ -14,6 +14,7 @@ const direccion_routes_1 = __importDefault(require("./routes/direccion.routes"))
 const empresa_routes_1 = __importDefault(require("./routes/empresa.routes"));
 const historial_routes_1 = __importDefault(require("./routes/historial.routes"));
 const metodopago_routes_1 = __importDefault(require("./routes/metodopago.routes"));
+const user_routes_1 = __importDefault(require("./routes/user.routes"));
 dotenv_1.default.config();
 const app = (0, express_1.default)();
 const PORT = process.env.PORT || 3001;
@@ -30,6 +31,7 @@ app.use("/Api", direccion_routes_1.default);
 app.use("/Api", empresa_routes_1.default);
 app.use("/Api", historial_routes_1.default);
 app.use("/Api", metodopago_routes_1.default);
+app.use("/Api", user_routes_1.default);
 (0, db_1.default)().then(() => {
     app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
 });

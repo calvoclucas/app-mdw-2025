@@ -3,7 +3,6 @@ import { initializeApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
 import { getAnalytics } from "firebase/analytics";
 
-// Configuración de Firebase
 const firebaseConfig = {
   apiKey: "AIzaSyBoVgAOs6x1NgQxycfZNS4MtsyHKJ7TUwU",
   authDomain: "altoque-74941.firebaseapp.com",

@@ -17,7 +17,7 @@ const Register: React.FC = () => {
     try {
       await createUserWithEmailAndPassword(auth, email, password);
       toast.success("¡Registrado correctamente!", { duration: 3000 });
-      navigate("/"); // Redirige al login después de registrarse
+      navigate("/");
     } catch (err: any) {
       setError(err.message);
     }
