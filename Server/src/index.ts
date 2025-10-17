@@ -9,6 +9,7 @@ import direccionRoutes from "./routes/direccion.routes";
 import empresaRoutes from "./routes/empresa.routes";
 import historialRoutes from "./routes/historial.routes";
 import metodoPagoRoutes from "./routes/metodopago.routes";
+import userRoutes from "./routes/user.routes";
 
 dotenv.config();
 const app = express();
@@ -29,6 +30,7 @@ app.use("/Api", direccionRoutes);
 app.use("/Api", empresaRoutes);
 app.use("/Api", historialRoutes);
 app.use("/Api", metodoPagoRoutes);
+app.use("/Api",userRoutes);
 
 connectDB().then(() => {
   app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
