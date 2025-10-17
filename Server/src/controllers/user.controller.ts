@@ -12,6 +12,37 @@ export const getUsers = async (req: Request, res: Response) => {
   }
 };
 
+export const RegisterUser = async (req: Request, res: Response) => {
+  try {
+    const { email, name, lastName, role } = req.body;
+
+    if (!email || !name || !lastName || !role) {
+      return res.status(400).json({ error: "Todos los campos son requeridos" });
+    }
+
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      return res.status(409).json({ error: "Usuario ya registrado" });
+    }
+
+    const user = new User({
+      email,
+      name,
+      lastName,
+      role,
+      isActive: true,
+    });
+
+    const newUser = await user.save();
+    res
+      .status(201)
+      .json({ message: "Usuario creado correctamente", user: newUser });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Error al registrar usuario" });
+  }
+};
+
 export const createUser = async (req: Request, res: Response) => {
   try {
     const user = new User(req.body);

@@ -4,20 +4,27 @@ import User from "../models/User";
 
 export const login = async (req: Request, res: Response) => {
   try {
-    const { token } = req.body; 
+    const { token } = req.body;
     if (!token) return res.status(400).json({ error: "Token requerido" });
 
     const decodedToken = await admin.auth().verifyIdToken(token);
-
-    const { uid, email, name } = decodedToken;
-
+    const { uid, email, name, picture, family_name } = decodedToken;
     let user = await User.findOne({ uid });
 
     if (!user) {
-      user = new User({ uid, email, name: name || "Sin nombre" });
-      await user.save();
-    }
+      user = await User.findOne({ email });
 
+      if (!user) {
+        user = new User({
+          uid,
+          email,
+          name: name || "Sin nombre",
+          lastName: family_name || "Sin apellido",
+          avatar: picture || "",
+        });
+        await user.save();
+      }
+    }
     res.json({ message: "Login exitoso", user });
   } catch (error: any) {
     console.error(error);

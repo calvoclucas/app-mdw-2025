@@ -2,11 +2,34 @@ import React, { useState } from "react";
 import { useDispatch } from "react-redux";
 import { login } from "../features/auth/authSlice";
 import { signInWithEmailAndPassword } from "firebase/auth";
-import type { User } from "firebase/auth";
-import { auth } from "../firebase";
+import { auth } from "../firebase.js";
 import { useNavigate } from "react-router-dom";
-import type { AppDispatch } from "../app/store";
+import type { AppDispatch } from "../app/store.js";
 import logo from "../assets/logo_altoque.png";
+import axios from "axios";
+
+interface LoginResponse {
+  message: string;
+  user: {
+    uid?: string;
+    name: string;
+    lastName: string;
+    email: string;
+    role?: "cliente" | "empresa";
+    _id?: string;
+    [key: string]: any;
+  };
+  token?: string;
+}
+
+interface AppUser {
+  uid?: string;
+  name: string;
+  lastName: string;
+  email: string;
+  role?: "cliente" | "empresa";
+  _id?: string;
+}
 
 const Login: React.FC = () => {
   const [email, setEmail] = useState("");
@@ -17,17 +40,39 @@ const Login: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    setError("");
+
     try {
       const userCredential = await signInWithEmailAndPassword(
         auth,
         email,
         password
       );
-      const user: User = userCredential.user;
-      dispatch(login(user));
+      const firebaseUser = userCredential.user;
+      const token = await firebaseUser.getIdToken();
+      const { data } = await axios.post<LoginResponse>(
+        "http://localhost:3001/api/login",
+        { token }
+      );
+
+      const appUser: AppUser = {
+        uid: data.user.uid || firebaseUser.uid,
+        email: data.user.email,
+        name: data.user.name,
+        lastName: data.user.lastName,
+        role: data.user.role,
+        _id: data.user._id,
+      };
+
+      dispatch(login(appUser as any));
       navigate("/dashboard");
     } catch (err: any) {
-      setError(err.message);
+      console.error(err);
+      if (err?.response?.data?.error) {
+        setError(err.response.data.error);
+      } else {
+        setError(err.message || "Error al iniciar sesión");
+      }
     }
   };
 
@@ -37,7 +82,6 @@ const Login: React.FC = () => {
         onSubmit={handleSubmit}
         className="bg-white p-10 rounded-xl shadow-2xl w-full max-w-sm transform transition duration-500 hover:scale-105"
       >
-        {/* Logo */}
         <div className="flex justify-center mb-4">
           <img src={logo} alt="Logo" className="w-40 h-auto object-contain" />
         </div>

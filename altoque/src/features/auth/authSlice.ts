@@ -1,10 +1,16 @@
-// src/features/auth/authSlice.ts
-import { createSlice } from "@reduxjs/toolkit";
-import type { PayloadAction } from "@reduxjs/toolkit";
-import type { User } from "firebase/auth";
+import { createSlice, PayloadAction } from "@reduxjs/toolkit";
+
+export interface AppUser {
+  uid?: string;
+  _id?: string;
+  email: string;
+  name: string;
+  lastName: string;
+  role?: "cliente" | "empresa";
+}
 
 interface AuthState {
-  user: User | null;
+  user: AppUser | null;
 }
 
 const initialState: AuthState = {
@@ -15,7 +21,7 @@ export const authSlice = createSlice({
   name: "auth",
   initialState,
   reducers: {
-    login: (state, action: PayloadAction<User>) => {
+    login: (state, action: PayloadAction<AppUser>) => {
       state.user = action.payload;
     },
     logout: (state) => {

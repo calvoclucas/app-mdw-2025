@@ -1,25 +1,54 @@
-// src/components/Register.tsx
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { createUserWithEmailAndPassword } from "firebase/auth";
 import { auth } from "../firebase";
 import toast from "react-hot-toast";
+import axios from "axios";
 import logo from "../assets/logo_altoque.png";
 
 const Register: React.FC = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [name, setName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [role, setRole] = useState("cliente");
   const [error, setError] = useState("");
   const navigate = useNavigate();
 
   const handleRegister = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    setError("");
+
     try {
-      await createUserWithEmailAndPassword(auth, email, password);
+      const apiResponse = await axios.post(
+        "http://localhost:3001/Api/RegisterUser",
+        {
+          email,
+          name,
+          lastName,
+          role,
+        }
+      );
+
+      console.log("API Response:", apiResponse.data);
+
+      const userCredential = await createUserWithEmailAndPassword(
+        auth,
+        email,
+        password
+      );
+      const firebaseUser = userCredential.user;
+
       toast.success("¡Registrado correctamente!", { duration: 3000 });
       navigate("/");
     } catch (err: any) {
-      setError(err.message);
+      if (err.response) {
+        setError(
+          err.response.data.error || "Error al registrar en el servidor"
+        );
+      } else {
+        setError(err.message);
+      }
     }
   };
 
@@ -29,7 +58,6 @@ const Register: React.FC = () => {
         onSubmit={handleRegister}
         className="bg-white p-10 rounded-xl shadow-2xl w-full max-w-sm transform transition duration-500 hover:scale-105"
       >
-        {/* Logo */}
         <div className="flex justify-center mb-4">
           <img src={logo} alt="Logo" className="w-40 h-auto object-contain" />
         </div>
@@ -40,6 +68,24 @@ const Register: React.FC = () => {
         {error && (
           <p className="text-red-500 mb-4 text-center font-medium">{error}</p>
         )}
+
+        <input
+          type="text"
+          placeholder="Nombre"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          className="w-full p-3 mb-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 transition"
+          required
+        />
+
+        <input
+          type="text"
+          placeholder="Apellido"
+          value={lastName}
+          onChange={(e) => setLastName(e.target.value)}
+          className="w-full p-3 mb-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 transition"
+          required
+        />
 
         <input
           type="email"
@@ -58,6 +104,15 @@ const Register: React.FC = () => {
           className="w-full p-3 mb-6 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 transition"
           required
         />
+
+        <select
+          value={role}
+          onChange={(e) => setRole(e.target.value)}
+          className="w-full p-3 mb-6 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 transition"
+        >
+          <option value="cliente">Cliente</option>
+          <option value="empresa">Empresa</option>
+        </select>
 
         <button
           type="submit"
