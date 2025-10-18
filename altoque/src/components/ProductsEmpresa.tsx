@@ -226,7 +226,7 @@ const ProductosEmpresa: React.FC = () => {
 
       {carritoAbierto && (
         <div
-          className="fixed inset-0 bg-opacity-30 z-40"
+          className="fixed inset-0 bg-opacity-30 backdrop-blur-sm z-40"
           onClick={() => setCarritoAbierto(false)}
         ></div>
       )}
@@ -249,6 +249,7 @@ const ProductosEmpresa: React.FC = () => {
               <X size={24} />
             </button>
           </div>
+
           <div className="flex-1 overflow-y-auto p-4">
             {carrito.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-full text-center">
@@ -317,7 +318,11 @@ const ProductosEmpresa: React.FC = () => {
                 </div>
               </div>
               <button
-                onClick={() => alert("Pedido confirmado 🛵")}
+                onClick={() =>
+                  navigate("/checkout", {
+                    state: { carrito, total, empresaId: id },
+                  })
+                }
                 className="w-full bg-gradient-to-r from-green-500 to-emerald-500 text-white px-6 py-3 rounded-full font-bold hover:from-green-600 hover:to-emerald-600 transition-all shadow-lg hover:shadow-xl"
               >
                 Confirmar Pedido 🛵

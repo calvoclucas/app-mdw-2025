@@ -7,6 +7,7 @@ import axios from "axios";
 import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
 import L from "leaflet";
 import logo from "../assets/logo_altoque.png";
+import { useLocation } from "react-router-dom";
 
 type EmpresaConUsuario = {
   _id: string;
@@ -97,6 +98,26 @@ const CardSkeleton: React.FC = () => (
 );
 
 const Dashboard: React.FC = () => {
+  const location = useLocation();
+  const state = location.state as
+    | {
+        mensaje?: string;
+        tiempoEstimado?: number;
+        horaListo?: string;
+      }
+    | undefined;
+
+  const [pedidoMensaje, setPedidoMensaje] = useState(state?.mensaje || "");
+  const [tiempoEstimado, setTiempoEstimado] = useState(state?.tiempoEstimado);
+  const [horaListo, setHoraListo] = useState(state?.horaListo);
+
+  useEffect(() => {
+    if (state?.mensaje) {
+      const timeout = setTimeout(() => setPedidoMensaje(""), 8000);
+      return () => clearTimeout(timeout);
+    }
+  }, [state]);
+
   const user = useSelector((state: RootState) => state.auth.user);
   const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
@@ -157,6 +178,33 @@ const Dashboard: React.FC = () => {
             {user?.name || user?.email || "Usuario"}
           </span>
         </h2>
+        {pedidoMensaje && (
+          <div className="mx-4 sm:mx-6 mt-4 p-4 bg-green-50 border border-green-400 text-green-800 rounded-xl shadow-md flex justify-between items-center animate-fade-in">
+            <div>
+              <p className="font-semibold">{pedidoMensaje}</p>
+              {tiempoEstimado && horaListo && (
+                <p className="text-sm text-green-700">
+                  Tiempo estimado: {tiempoEstimado} min | Listo aprox:{" "}
+                  {horaListo}
+                </p>
+              )}
+            </div>
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-6 w-6 text-green-600"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M9 12l2 2 4-4"
+              />
+            </svg>
+          </div>
+        )}
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 p-2">
           {loading
