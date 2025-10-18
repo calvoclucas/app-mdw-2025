@@ -11,6 +11,7 @@ import historialRoutes from "./routes/historial.routes";
 import metodoPagoRoutes from "./routes/metodopago.routes";
 import userRoutes from "./routes/user.routes";
 import productRoutes from "./routes/producto.routes";
+import pedidoRoutes from "./routes/pedido.routes";
 
 dotenv.config();
 const app = express();
@@ -33,6 +34,7 @@ app.use("/Api", historialRoutes);
 app.use("/Api", metodoPagoRoutes);
 app.use("/Api", userRoutes);
 app.use("/Api", productRoutes);
+app.use("/Api", pedidoRoutes);
 
 connectDB().then(() => {
   app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
