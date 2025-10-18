@@ -11,6 +11,23 @@ export const GetProductos = async (req: Request, res: Response) => {
   }
 };
 
+import mongoose from "mongoose";
+
+export const GetProductosByEmpresa = async (req: Request, res: Response) => {
+  try {
+    const { id_empresa } = req.params;
+    const objectId = new mongoose.Types.ObjectId(id_empresa);
+    const productos = await Producto.find({ id_empresa: objectId }).populate(
+      "id_empresa"
+    );
+
+    res.json(productos);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Error al traer los productos" });
+  }
+};
+
 export const GetProductoById = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;

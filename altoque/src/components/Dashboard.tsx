@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
+import { useNavigate } from "react-router-dom";
 import { logout } from "../features/auth/authSlice.js";
 import type { RootState, AppDispatch } from "../app/store.js";
 import axios from "axios";
@@ -11,6 +12,7 @@ type EmpresaConUsuario = {
   _id: string;
   email: string;
   empresa?: {
+    _id: string;
     nombre: string;
     email: string;
     telefono: string;
@@ -97,6 +99,7 @@ const CardSkeleton: React.FC = () => (
 const Dashboard: React.FC = () => {
   const user = useSelector((state: RootState) => state.auth.user);
   const dispatch = useDispatch<AppDispatch>();
+  const navigate = useNavigate();
   const [empresas, setEmpresas] = useState<EmpresaConUsuario[]>([]);
   const [loading, setLoading] = useState(true);
   const [imagenes, setImagenes] = useState<{ [key: string]: string }>({});
@@ -132,7 +135,6 @@ const Dashboard: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
       <header className="bg-white shadow-sm flex items-center justify-between px-4 sm:px-6 py-3 sticky top-0 z-50 border-b border-gray-100">
         <div className="flex items-center gap-3">
           <img src={logo} alt="Logo" className="w-12 h-12 object-contain" />
@@ -178,7 +180,11 @@ const Dashboard: React.FC = () => {
                 return (
                   <div
                     key={item._id}
-                    className="bg-white rounded-xl shadow-sm overflow-hidden transform transition duration-300 hover:scale-[1.03] hover:shadow-md border border-gray-100 m-8"
+                    className="group bg-white rounded-xl shadow-sm overflow-hidden transform transition duration-300 hover:scale-[1.03] hover:shadow-md border border-gray-100 m-8 cursor-pointer"
+                    onClick={() =>
+                      item.empresa?._id &&
+                      navigate(`/empresa/${item.empresa._id}`)
+                    }
                   >
                     <div className="relative">
                       <img
@@ -205,7 +211,7 @@ const Dashboard: React.FC = () => {
                     </div>
 
                     <div className="p-5 flex flex-col gap-2 text-sm">
-                      <h3 className="text-base font-semibold text-gray-900 truncate">
+                      <h3 className="text-base font-semibold text-gray-900 truncate group-hover:text-yellow-500 transition-colors">
                         {item.empresa?.nombre}
                       </h3>
                       <p className="text-gray-600 flex items-center gap-1">
@@ -253,31 +259,32 @@ const Dashboard: React.FC = () => {
                       )}
                     </div>
 
-                    {/* Mapa */}
                     {item.direccion?.coordenadas && (
-                      <MapContainer
-                        center={[
-                          item.direccion.coordenadas.lat,
-                          item.direccion.coordenadas.lng,
-                        ]}
-                        zoom={16}
-                        scrollWheelZoom={false}
-                        className="w-full h-36 rounded-b-xl overflow-hidden border-t border-gray-200"
-                      >
-                        <TileLayer
-                          url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
-                          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/">CARTO</a>'
-                        />
-                        <Marker
-                          position={[
+                      <div onClick={(e) => e.stopPropagation()}>
+                        <MapContainer
+                          center={[
                             item.direccion.coordenadas.lat,
                             item.direccion.coordenadas.lng,
                           ]}
-                          icon={empresaIcon}
+                          zoom={16}
+                          scrollWheelZoom={false}
+                          className="w-full h-36 rounded-b-xl overflow-hidden border-t border-gray-200"
                         >
-                          <Popup>{item.empresa?.nombre}</Popup>
-                        </Marker>
-                      </MapContainer>
+                          <TileLayer
+                            url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
+                            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/">CARTO</a>'
+                          />
+                          <Marker
+                            position={[
+                              item.direccion.coordenadas.lat,
+                              item.direccion.coordenadas.lng,
+                            ]}
+                            icon={empresaIcon}
+                          >
+                            <Popup>{item.empresa?.nombre}</Popup>
+                          </Marker>
+                        </MapContainer>
+                      </div>
                     )}
                   </div>
                 );
