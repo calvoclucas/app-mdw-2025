@@ -104,6 +104,8 @@ const EmpresaCard: React.FC<{ empresa: EmpresaConUsuario; imagen: string }> = ({
   empresa,
   imagen,
 }) => {
+  const navigate = useNavigate();
+
   const abiertoAhora = (() => {
     if (
       !empresa.empresa ||
@@ -119,8 +121,16 @@ const EmpresaCard: React.FC<{ empresa: EmpresaConUsuario; imagen: string }> = ({
     return horaActual >= apertura && horaActual < cierre;
   })();
 
+  const handleClick = () => {
+    if (!empresa.empresa?._id) return;
+    navigate(`/empresa/${empresa.empresa._id}`);
+  };
+
   return (
-    <div className="group bg-white rounded-xl shadow-sm overflow-hidden transform transition duration-300 hover:scale-[1.03] hover:shadow-md border border-gray-100 m-8 cursor-pointer">
+    <div
+      className="group bg-white rounded-xl shadow-sm overflow-hidden transform transition duration-300 hover:scale-[1.03] hover:shadow-md border border-gray-100 m-8 cursor-pointer"
+      onClick={handleClick}
+    >
       <div className="relative">
         <img
           src={imagen}
@@ -242,12 +252,16 @@ const Dashboard: React.FC = () => {
             })
           );
           setImagenes(nuevasImagenes);
-        } else if (user.role === "empresa") {
+        } else if (user.role === "empresa" && user.empresa) {
           const res = await axios.get<Pedido[]>(
-            `http://localhost:3001/Api/GetHistorialesByEmpresa/${user.empresa?._id}`
+            `http://localhost:3001/Api/GetHistorialesByEmpresa/${user.empresa._id}`
           );
-          console.log("Pedidos recibidos:", res.data.length);
           setPedidos(res.data);
+        } else if (user.role === "empresa") {
+          console.warn(
+            "No se pudo obtener el ID de la empresa del usuario",
+            user
+          );
         }
       } catch (err) {
       } finally {

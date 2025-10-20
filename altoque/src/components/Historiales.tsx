@@ -39,6 +39,7 @@ const Historiales: React.FC<HistorialesProps> = ({ tipo = "cliente" }) => {
             : `http://localhost:3001/Api/GetHistorialesByEmpresa/${id}`;
 
         const res = await axios.get<Historial[]>(url);
+        console.log(res.data);
         setHistoriales(res.data);
       } catch (err) {
         console.error(err);
@@ -126,9 +127,6 @@ const Historiales: React.FC<HistorialesProps> = ({ tipo = "cliente" }) => {
                   className="bg-white rounded-2xl shadow-md p-4 border border-orange-100 hover:shadow-xl transition-all"
                 >
                   <div className="flex justify-between items-center mb-2">
-                    <h3 className="font-bold text-gray-800 text-sm truncate">
-                      Pedido ID: {pedido._id}
-                    </h3>
                     <span
                       className={`px-2 py-1 rounded-full text-white text-xs font-semibold ${estadoColor}`}
                     >

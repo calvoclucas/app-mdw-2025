@@ -17,8 +17,9 @@ interface AuthState {
   user: AppUser | null;
 }
 
+const storedUser = localStorage.getItem("user");
 const initialState: AuthState = {
-  user: null,
+  user: storedUser ? JSON.parse(storedUser) : null,
 };
 
 export const authSlice = createSlice({
@@ -27,12 +28,17 @@ export const authSlice = createSlice({
   reducers: {
     login: (state, action: PayloadAction<AppUser>) => {
       state.user = action.payload;
+      localStorage.setItem("user", JSON.stringify(action.payload));
     },
     logout: (state) => {
       state.user = null;
+      localStorage.removeItem("user");
+    },
+    setUser: (state, action: PayloadAction<AppUser>) => {
+      state.user = action.payload;
     },
   },
 });
 
-export const { login, logout } = authSlice.actions;
+export const { login, logout, setUser } = authSlice.actions;
 export default authSlice.reducer;

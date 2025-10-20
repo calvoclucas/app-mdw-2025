@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import axios from "axios";
+import { useSelector } from "react-redux";
+import type { RootState } from "../app/store";
 import {
   ShoppingBag,
   Store,
@@ -37,11 +39,12 @@ interface LocationState {
 const CheckoutPedido: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
-
   const state = location.state as LocationState | undefined;
   const carrito = state?.carrito ?? [];
   const total = state?.total ?? 0;
   const empresaId = state?.empresaId ?? "";
+  const user = useSelector((state: RootState) => state.auth.user);
+
   const [tipoEntrega, setTipoEntrega] = useState<"retiro" | "domicilio">(
     "retiro"
   );
@@ -60,9 +63,7 @@ const CheckoutPedido: React.FC = () => {
           "http://localhost:3001/Api/GetMetodosPago"
         );
         setMetodosPago(data);
-        if (data.length > 0) {
-          setMetodoPagoSeleccionado(data[0]._id);
-        }
+        if (data.length > 0) setMetodoPagoSeleccionado(data[0]._id);
       } catch (err) {
         console.error("Error al cargar métodos de pago:", err);
         setError("No se pudieron cargar los métodos de pago");
@@ -70,16 +71,16 @@ const CheckoutPedido: React.FC = () => {
         setLoading(false);
       }
     };
-
     cargarMetodosPago();
-  }, [carrito, navigate]);
+  }, []);
 
   const handleConfirmarPedido = async () => {
     if (!metodoPagoSeleccionado) {
       alert("Por favor selecciona un método de pago");
       return;
     }
-    if (!empresaId) {
+
+    if (!empresaId && !user?.empresa?._id) {
       alert("Error: No se encontró información de la empresa");
       return;
     }
@@ -88,20 +89,31 @@ const CheckoutPedido: React.FC = () => {
     setError(null);
 
     try {
-      const id_cliente = "68b860f41b220cd3bb5dfe90";
+      const id_cliente = user?.role === "cliente" ? user._id : undefined;
+      const id_empresa =
+        user?.role === "empresa" ? user.empresa?._id : empresaId;
+
+      if (!id_cliente && user?.role === "cliente")
+        throw new Error("No se pudo obtener el ID del cliente");
+      if (!id_empresa)
+        throw new Error("No se pudo obtener el ID de la empresa");
       const id_direccion =
         tipoEntrega === "domicilio"
-          ? "68b860f51b220cd3bb5dfe9a"
-          : "68b860f51b220cd3bb5dfe9a";
+          ? user?.role === "cliente"
+            ? "68f1c460f11a42140ab02ab4"
+            : "68f1c460f11a42140ab02ab4"
+          : user?.role === "empresa"
+          ? "68f1c460f11a42140ab02ab4"
+          : "68f1c460f11a42140ab02ab4";
+
+      if (!id_direccion)
+        throw new Error("No se pudo obtener la dirección para el pedido");
 
       const pedidoPayload = {
         id_cliente,
-        id_empresa: empresaId,
+        id_empresa,
         id_metodo_pago: metodoPagoSeleccionado,
-        id_direccion:
-          tipoEntrega === "domicilio"
-            ? id_direccion
-            : "68b860f51b220cd3bb5dfe9a",
+        id_direccion,
         total,
         estado: "pendiente",
         tipo_entrega: tipoEntrega,
@@ -113,12 +125,6 @@ const CheckoutPedido: React.FC = () => {
         pedidoPayload
       );
 
-      console.log("Respuesta del backend:", pedidoCreado);
-
-      if (!pedidoCreado || !pedidoCreado._id) {
-        throw new Error("No se pudo crear el pedido");
-      }
-
       await Promise.all(
         carrito.map((item) =>
           axios.post("http://localhost:3001/Api/CreateDetallePedido", {
@@ -129,6 +135,7 @@ const CheckoutPedido: React.FC = () => {
           })
         )
       );
+
       const ahora = new Date();
       const horaListo = new Date(
         ahora.getTime() + pedidoPayload.tiempo_estimado * 60000
@@ -157,7 +164,7 @@ const CheckoutPedido: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-orange-50 via-yellow-50 to-amber-50 flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-orange-500"></div>
       </div>
     );
