@@ -126,14 +126,21 @@ const CheckoutPedido: React.FC = () => {
       );
 
       await Promise.all(
-        carrito.map((item) =>
-          axios.post("http://localhost:3001/Api/CreateDetallePedido", {
+        carrito.map(async (item) => {
+          await axios.post("http://localhost:3001/Api/CreateDetallePedido", {
             id_pedido: pedidoCreado._id,
             id_producto: item._id,
             cantidad: item.cantidad,
             precio_unitario: item.precio,
-          })
-        )
+          });
+
+          await axios.put(
+            `http://localhost:3001/Api/EditProducto/${item._id}`,
+            {
+              $inc: { cantidad: -item.cantidad },
+            }
+          );
+        })
       );
 
       const ahora = new Date();

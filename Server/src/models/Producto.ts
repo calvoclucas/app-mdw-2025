@@ -7,6 +7,7 @@ const productoSchema = new Schema(
     descripcion: { type: String },
     precio: { type: Number, required: true },
     retiro_local: { type: Boolean, default: false },
+    cantidad: { type: Number, default: 0 },
   },
   { timestamps: true }
 );

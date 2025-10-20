@@ -13,6 +13,7 @@ interface Producto {
   descripcion?: string;
   precio: number;
   retiro_local: boolean;
+  cantidad: number;
 }
 
 const ABMProducto: React.FC = () => {
@@ -31,6 +32,7 @@ const ABMProducto: React.FC = () => {
     descripcion: "",
     precio: 0,
     retiro_local: false,
+    cantidad: 0,
   });
 
   const fetchProductos = async () => {
@@ -188,6 +190,10 @@ const ABMProducto: React.FC = () => {
                   Precio: ${p.precio.toFixed(2)}
                 </p>
                 <p className="text-gray-500 text-sm">
+                  Stock disponible: {p.cantidad}
+                </p>
+
+                <p className="text-gray-500 text-sm">
                   Retiro en local: {p.retiro_local ? "Sí" : "No"}
                 </p>
               </div>
@@ -210,60 +216,100 @@ const ABMProducto: React.FC = () => {
         </div>
 
         {modalOpen && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-xl p-6 w-full max-w-md shadow-lg">
-              <h2 className="text-xl font-bold mb-4">
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-xl p-8 w-full max-w-lg shadow-lg">
+              <h2 className="text-2xl font-bold mb-6 text-center">
                 {editingProducto ? "Editar Producto" : "Nuevo Producto"}
               </h2>
-              <form onSubmit={handleSubmit} className="flex flex-col gap-3">
-                <input
-                  type="text"
-                  name="nombre"
-                  placeholder="Nombre"
-                  value={form.nombre}
-                  onChange={handleChange}
-                  className="border p-2 rounded"
-                  required
-                />
-                <textarea
-                  name="descripcion"
-                  placeholder="Descripción"
-                  value={form.descripcion}
-                  onChange={handleChange}
-                  className="border p-2 rounded"
-                />
-                <input
-                  type="number"
-                  name="precio"
-                  placeholder="Precio"
-                  value={form.precio}
-                  onChange={handleChange}
-                  className="border p-2 rounded"
-                  required
-                />
-                <label className="flex items-center gap-2">
+              <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+                <div className="flex flex-col">
+                  <label htmlFor="nombre" className="font-medium mb-1">
+                    Nombre del Producto
+                  </label>
+                  <input
+                    type="text"
+                    id="nombre"
+                    name="nombre"
+                    placeholder="Ingrese el nombre"
+                    value={form.nombre}
+                    onChange={handleChange}
+                    className="border p-3 rounded text-lg"
+                    required
+                  />
+                </div>
+                <div className="flex flex-col">
+                  <label htmlFor="descripcion" className="font-medium mb-1">
+                    Descripción
+                  </label>
+                  <textarea
+                    id="descripcion"
+                    name="descripcion"
+                    placeholder="Ingrese una descripción"
+                    value={form.descripcion}
+                    onChange={handleChange}
+                    className="border p-3 rounded text-lg resize-none h-24"
+                  />
+                </div>
+                <div className="flex flex-col">
+                  <label htmlFor="precio" className="font-medium mb-1">
+                    Precio
+                  </label>
+                  <input
+                    type="number"
+                    id="precio"
+                    name="precio"
+                    placeholder="Ingrese el precio"
+                    value={form.precio}
+                    onChange={handleChange}
+                    className="border p-3 rounded text-lg"
+                    min={0}
+                    required
+                  />
+                </div>
+
+                <div className="flex flex-col">
+                  <label htmlFor="cantidad" className="font-medium mb-1">
+                    Cantidad en Stock
+                  </label>
+                  <input
+                    type="number"
+                    id="cantidad"
+                    name="cantidad"
+                    placeholder="Ingrese la cantidad disponible"
+                    value={form.cantidad}
+                    onChange={handleChange}
+                    className="border p-3 rounded text-lg"
+                    min={0}
+                  />
+                </div>
+
+                <div className="flex items-center gap-2">
                   <input
                     type="checkbox"
+                    id="retiro_local"
                     name="retiro_local"
                     checked={form.retiro_local}
                     onChange={handleChange}
                   />
-                  Retiro en local
-                </label>
-                <div className="flex justify-end gap-2 mt-4">
+                  <label htmlFor="retiro_local" className="font-medium">
+                    Retiro en local
+                  </label>
+                </div>
+
+                <div className="flex justify-end gap-4 mt-4">
                   <button
                     type="button"
                     onClick={() => {
                       setModalOpen(false);
                       setEditingProducto(null);
                     }}
-                    className="px-4 py-2 rounded bg-gray-300 hover:bg-gray-400 transition"
+                    className="px-5 py-2 rounded bg-gray-300 hover:bg-gray-400 transition font-medium"
                   >
                     Cancelar
                   </button>
                   <button
                     type="submit"
-                    className="px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-700 transition"
+                    className="px-5 py-2 rounded bg-blue-600 text-white hover:bg-blue-700 transition font-medium"
                   >
                     Guardar
                   </button>
