@@ -7,6 +7,7 @@ import axios from "axios";
 import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
 import L from "leaflet";
 import logo from "../assets/logo_altoque.png";
+import EstadisticasEmpresa from "./EstadisticasEmpresa";
 
 type EmpresaConUsuario = {
   _id: string;
@@ -185,7 +186,6 @@ const EmpresaCard: React.FC<{ empresa: EmpresaConUsuario; imagen: string }> = ({
 const PedidoCard: React.FC<{ pedido: Pedido }> = ({ pedido }) => (
   <div className="bg-white shadow rounded-xl p-4 flex justify-between items-center">
     <div>
-      <p className="font-semibold">{pedido.clienteNombre}</p>
       <p className="text-gray-500 text-sm">
         Total: ${Number(pedido.total || 0).toFixed(2)}
       </p>
@@ -335,7 +335,6 @@ const Dashboard: React.FC = () => {
           </button>
         </div>
       </header>
-
       <section className="px-4 sm:px-6 py-6">
         <h2 className="text-lg md:text-xl font-medium text-gray-800 mb-5">
           Bienvenido,{" "}
@@ -375,12 +374,17 @@ const Dashboard: React.FC = () => {
                 ))}
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {pedidos.length === 0 && !loading && <p>No hay pedidos aún</p>}
-            {pedidos.map((pedido) => (
-              <PedidoCard key={pedido._id} pedido={pedido} />
-            ))}
-          </div>
+          <>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {pedidos.length === 0 && !loading && <p>No hay pedidos aún</p>}
+              {pedidos.map((pedido) => (
+                <PedidoCard key={pedido._id} pedido={pedido} />
+              ))}
+            </div>
+            {user?.role === "empresa" && pedidos.length > 0 && (
+              <EstadisticasEmpresa pedidos={pedidos} />
+            )}
+          </>
         )}
       </section>
     </div>
