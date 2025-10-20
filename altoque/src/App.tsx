@@ -5,6 +5,7 @@ import Register from "./components/Register";
 import Dashboard from "./components/Dashboard";
 import CheckoutPedido from "./components/CheckoutPedido";
 import ProductsEmpresa from "./components/ProductsEmpresa";
+import Historiales from "./components/Historiales";
 
 const App: React.FC = () => {
   return (
@@ -15,6 +16,7 @@ const App: React.FC = () => {
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/empresa/:id" element={<ProductsEmpresa />} />
         <Route path="/checkout" element={<CheckoutPedido />} />
+        <Route path="/historial/:id" element={<Historiales />} />
       </Routes>
     </BrowserRouter>
   );

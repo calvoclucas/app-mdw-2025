@@ -1,13 +1,12 @@
 import React, { useEffect, useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { logout } from "../features/auth/authSlice.js";
 import type { RootState, AppDispatch } from "../app/store.js";
 import axios from "axios";
 import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
 import L from "leaflet";
 import logo from "../assets/logo_altoque.png";
-import { useLocation } from "react-router-dom";
 
 type EmpresaConUsuario = {
   _id: string;
@@ -31,12 +30,16 @@ type EmpresaConUsuario = {
   };
 };
 
+type Pedido = {
+  _id: string;
+  clienteNombre: string;
+  total: number;
+  estado: string;
+  createdAt: string;
+};
+
 interface PexelsPhoto {
-  photos: Array<{
-    src: {
-      large2x: string;
-    };
-  }>;
+  photos: Array<{ src: { large2x: string } }>;
 }
 
 const API_KEY = import.meta.env.VITE_PEXELS_API_KEY;
@@ -50,7 +53,7 @@ const empresaIcon = new L.Icon({
 });
 
 const fetchLogoFromLogoDev = (companyName: string): string | null => {
-  if (companyName.toLowerCase().includes("Donald")) {
+  if (companyName.toLowerCase().includes("donald")) {
     return "https://img.logo.dev/McDonald's?size=256";
   }
   return null;
@@ -97,19 +100,98 @@ const CardSkeleton: React.FC = () => (
   </div>
 );
 
+const EmpresaCard: React.FC<{ empresa: EmpresaConUsuario; imagen: string }> = ({
+  empresa,
+  imagen,
+}) => {
+  const abiertoAhora = (() => {
+    if (
+      !empresa.empresa ||
+      !empresa.empresa.horario_apertura ||
+      !empresa.empresa.horario_cierre
+    )
+      return false;
+
+    const horaActual = new Date().getHours();
+    const apertura = parseInt(empresa.empresa.horario_apertura.split(":")[0]);
+    const cierre = parseInt(empresa.empresa.horario_cierre.split(":")[0]);
+    if (apertura > cierre) return horaActual >= apertura || horaActual < cierre;
+    return horaActual >= apertura && horaActual < cierre;
+  })();
+
+  return (
+    <div className="group bg-white rounded-xl shadow-sm overflow-hidden transform transition duration-300 hover:scale-[1.03] hover:shadow-md border border-gray-100 m-8 cursor-pointer">
+      <div className="relative">
+        <img
+          src={imagen}
+          alt={empresa.empresa?.nombre || "Empresa"}
+          className="w-full h-36 object-cover transition duration-300 hover:opacity-90"
+          onError={(e) => {
+            e.currentTarget.src = genericRestaurantImage;
+          }}
+        />
+        <div
+          className={`absolute top-2 left-2 px-2 py-1 text-xs font-bold rounded-full shadow-md text-white`}
+          style={{ backgroundColor: abiertoAhora ? "#16a34a" : "#dc2626" }}
+        >
+          {abiertoAhora
+            ? `ABIERTO | Cierra ${empresa.empresa?.horario_cierre}`
+            : `CERRADO | Abre ${empresa.empresa?.horario_apertura}`}
+        </div>
+        <div className="absolute bottom-2 right-2 bg-white text-gray-800 px-2 py-1 text-xs font-semibold rounded-full shadow">
+          Envío: ${empresa.empresa?.costo_envio.toFixed(2)}
+        </div>
+      </div>
+      <div className="p-5 flex flex-col gap-2 text-sm">
+        <h3 className="text-base font-semibold text-gray-900 truncate group-hover:text-yellow-500 transition-colors">
+          {empresa.empresa?.nombre}
+        </h3>
+        <p className="text-gray-600 flex items-center gap-1">
+          {empresa.empresa?.email}
+        </p>
+        {empresa.empresa?.telefono && (
+          <p className="text-gray-600 flex items-center gap-1">
+            {empresa.empresa.telefono}
+          </p>
+        )}
+      </div>
+    </div>
+  );
+};
+
+const PedidoCard: React.FC<{ pedido: Pedido }> = ({ pedido }) => (
+  <div className="bg-white shadow rounded-xl p-4 flex justify-between items-center">
+    <div>
+      <p className="font-semibold">{pedido.clienteNombre}</p>
+      <p className="text-gray-500 text-sm">Total: ${pedido.total.toFixed(2)}</p>
+      <p className="text-gray-500 text-sm">Estado: {pedido.estado}</p>
+    </div>
+    <p className="text-gray-400 text-xs">
+      {new Date(pedido.createdAt).toLocaleString()}
+    </p>
+  </div>
+);
+
 const Dashboard: React.FC = () => {
   const location = useLocation();
   const state = location.state as
-    | {
-        mensaje?: string;
-        tiempoEstimado?: number;
-        horaListo?: string;
-      }
+    | { mensaje?: string; tiempoEstimado?: number; horaListo?: string }
     | undefined;
 
   const [pedidoMensaje, setPedidoMensaje] = useState(state?.mensaje || "");
   const [tiempoEstimado, setTiempoEstimado] = useState(state?.tiempoEstimado);
   const [horaListo, setHoraListo] = useState(state?.horaListo);
+
+  const user = useSelector((state: RootState) => state.auth.user);
+  const dispatch = useDispatch<AppDispatch>();
+  const navigate = useNavigate();
+
+  const [empresas, setEmpresas] = useState<EmpresaConUsuario[]>([]);
+  const [pedidos, setPedidos] = useState<Pedido[]>([]);
+  const [imagenes, setImagenes] = useState<{ [key: string]: string }>({});
+  const [loading, setLoading] = useState(true);
+
+  const handleLogout = () => dispatch(logout());
 
   useEffect(() => {
     if (state?.mensaje) {
@@ -118,41 +200,63 @@ const Dashboard: React.FC = () => {
     }
   }, [state]);
 
-  const user = useSelector((state: RootState) => state.auth.user);
-  const dispatch = useDispatch<AppDispatch>();
-  const navigate = useNavigate();
-  const [empresas, setEmpresas] = useState<EmpresaConUsuario[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [imagenes, setImagenes] = useState<{ [key: string]: string }>({});
-
-  const handleLogout = () => dispatch(logout());
-
   useEffect(() => {
-    setLoading(true);
-    axios
-      .get<EmpresaConUsuario[]>(
-        "http://localhost:3001/Api/GetEmpresasConUsuario"
-      )
-      .then(async (res) => {
-        setEmpresas(res.data);
-        const nuevasImagenes: { [key: string]: string } = {};
-        await Promise.all(
-          res.data.map(async (empresa) => {
-            const nombreEmpresa = empresa.empresa?.nombre || "";
-            let imageUrl = fetchLogoFromLogoDev(nombreEmpresa);
-            if (!imageUrl) {
-              imageUrl = await fetchImageFromPexels(nombreEmpresa, API_KEY);
-            }
-            nuevasImagenes[empresa._id] = imageUrl;
-          })
-        );
-        setImagenes(nuevasImagenes);
-      })
-      .catch((err) =>
-        console.error("Error al cargar empresas o imágenes:", err)
-      )
-      .then(() => setLoading(false));
-  }, []);
+    if (!user) return;
+
+    const fetchData = async () => {
+      setLoading(true);
+
+      try {
+        if (user.role === "cliente") {
+          console.log("Obteniendo empresas...");
+          const res = await axios.get<EmpresaConUsuario[]>(
+            "http://localhost:3001/Api/GetEmpresasConUsuario"
+          );
+
+          console.log("Respuesta recibida:", res.data.length, "empresas");
+          const data = res.data.filter((e) => e.empresa);
+          console.log("Empresas con datos filtradas:", data.length);
+          setEmpresas(data);
+
+          const nuevasImagenes: { [key: string]: string } = {};
+
+          await Promise.all(
+            data.map(async (empresa) => {
+              try {
+                let imageUrl = fetchLogoFromLogoDev(empresa.empresa!.nombre);
+                if (!imageUrl) {
+                  const query = empresa.empresa!.nombre.trim() || "restaurant";
+                  console.log("Buscando imagen en Pexels para:", query);
+                  imageUrl = await fetchImageFromPexels(query, API_KEY);
+                  console.log("Imagen encontrada:", imageUrl);
+                }
+                nuevasImagenes[empresa._id] = imageUrl;
+              } catch (err) {
+                console.warn(
+                  "Error cargando imagen para",
+                  empresa.empresa!.nombre,
+                  err
+                );
+                nuevasImagenes[empresa._id] = genericRestaurantImage;
+              }
+            })
+          );
+          setImagenes(nuevasImagenes);
+        } else if (user.role === "empresa") {
+          const res = await axios.get<Pedido[]>(
+            `http://localhost:3001/Api/GetHistorialesByEmpresa/${user.empresa?._id}`
+          );
+          console.log("Pedidos recibidos:", res.data.length);
+          setPedidos(res.data);
+        }
+      } catch (err) {
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [user]);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -163,12 +267,33 @@ const Dashboard: React.FC = () => {
             Altoque
           </h1>
         </div>
-        <button
-          onClick={handleLogout}
-          className="bg-red-600 text-white px-3 py-1.5 rounded-full font-semibold shadow-sm hover:bg-red-700 transition-colors text-sm"
-        >
-          Cerrar sesión
-        </button>
+
+        <div className="flex items-center gap-3">
+          {user?.role === "empresa" && (
+            <button
+              onClick={() => navigate("/productos")}
+              className="bg-blue-600 text-white px-3 py-1.5 rounded-full font-semibold shadow-sm hover:bg-blue-700 transition-colors text-sm"
+            >
+              Productos
+            </button>
+          )}
+          <button
+            onClick={() => {
+              const id =
+                user?.role === "empresa" ? user?.empresa?._id : user?._id;
+              navigate(`/historial/${id}`);
+            }}
+            className="bg-green-600 text-white px-3 py-1.5 rounded-full font-semibold shadow-sm hover:bg-green-700 transition-colors text-sm"
+          >
+            Pedidos
+          </button>
+          <button
+            onClick={handleLogout}
+            className="bg-red-600 text-white px-3 py-1.5 rounded-full font-semibold shadow-sm hover:bg-red-700 transition-colors text-sm"
+          >
+            Cerrar sesión
+          </button>
+        </div>
       </header>
 
       <section className="px-4 sm:px-6 py-6">
@@ -178,6 +303,7 @@ const Dashboard: React.FC = () => {
             {user?.name || user?.email || "Usuario"}
           </span>
         </h2>
+
         {pedidoMensaje && (
           <div className="mx-4 sm:mx-6 mt-4 p-4 bg-green-50 border border-green-400 text-green-800 rounded-xl shadow-md flex justify-between items-center animate-fade-in">
             <div>
@@ -189,155 +315,33 @@ const Dashboard: React.FC = () => {
                 </p>
               )}
             </div>
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="h-6 w-6 text-green-600"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M9 12l2 2 4-4"
-              />
-            </svg>
           </div>
         )}
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 p-2">
-          {loading
-            ? Array.from({ length: 8 }).map((_, i) => <CardSkeleton key={i} />)
-            : empresas.map((item) => {
-                const abiertoAhora = (() => {
-                  if (!item.empresa) return false;
-                  const horaActual = new Date().getHours();
-                  const apertura = parseInt(
-                    item.empresa.horario_apertura.split(":")[0]
-                  );
-                  const cierre = parseInt(
-                    item.empresa.horario_cierre.split(":")[0]
-                  );
-                  if (apertura > cierre)
-                    return horaActual >= apertura || horaActual < cierre;
-                  return horaActual >= apertura && horaActual < cierre;
-                })();
-                const imgSrc = imagenes[item._id] || genericRestaurantImage;
+        {loading && <p>Cargando...</p>}
 
-                return (
-                  <div
+        {user?.role === "cliente" ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 p-2">
+            {loading
+              ? Array.from({ length: 8 }).map((_, i) => (
+                  <CardSkeleton key={i} />
+                ))
+              : empresas.map((item) => (
+                  <EmpresaCard
                     key={item._id}
-                    className="group bg-white rounded-xl shadow-sm overflow-hidden transform transition duration-300 hover:scale-[1.03] hover:shadow-md border border-gray-100 m-8 cursor-pointer"
-                    onClick={() =>
-                      item.empresa?._id &&
-                      navigate(`/empresa/${item.empresa._id}`)
-                    }
-                  >
-                    <div className="relative">
-                      <img
-                        src={imgSrc}
-                        alt={item.empresa?.nombre || "Empresa"}
-                        className="w-full h-36 object-cover transition duration-300 hover:opacity-90"
-                        onError={(e) => {
-                          e.currentTarget.src = genericRestaurantImage;
-                        }}
-                      />
-                      <div
-                        className={`absolute top-2 left-2 px-2 py-1 text-xs font-bold rounded-full shadow-md text-white`}
-                        style={{
-                          backgroundColor: abiertoAhora ? "#16a34a" : "#dc2626",
-                        }}
-                      >
-                        {abiertoAhora
-                          ? `ABIERTO | Cierra ${item.empresa?.horario_cierre}`
-                          : `CERRADO | Abre ${item.empresa?.horario_apertura}`}
-                      </div>
-                      <div className="absolute bottom-2 right-2 bg-white text-gray-800 px-2 py-1 text-xs font-semibold rounded-full shadow">
-                        Envío: ${item.empresa?.costo_envio.toFixed(2)}
-                      </div>
-                    </div>
-
-                    <div className="p-5 flex flex-col gap-2 text-sm">
-                      <h3 className="text-base font-semibold text-gray-900 truncate group-hover:text-yellow-500 transition-colors">
-                        {item.empresa?.nombre}
-                      </h3>
-                      <p className="text-gray-600 flex items-center gap-1">
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          className="h-3 w-3 text-green-500"
-                          viewBox="0 0 20 20"
-                          fill="currentColor"
-                        >
-                          <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z" />
-                          <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z" />
-                        </svg>
-                        {item.empresa?.email}
-                      </p>
-                      {item.empresa?.telefono && (
-                        <p className="text-gray-600 flex items-center gap-1">
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            className="h-3 w-3 text-green-500"
-                            viewBox="0 0 20 20"
-                            fill="currentColor"
-                          >
-                            <path d="M2 3a1 1 0 011-1h2.153a1 1 0 01.986.836l1.3 9.135a1 1 0 01-.842 1.127l-2.006.398a1 1 0 00-.77.894v2.022c0 .554.446 1 1 1h8c.554 0 1-.446 1-1v-2.022a1 1 0 00-.77-.894l-2.006-.398a1 1 0 01-.842-1.127l1.3-9.135A1 1 0 0114.847 2H17a1 1 0 011 1v14a1 1 0 01-1 1H3a1 1 0 01-1-1V3z" />
-                          </svg>
-                          {item.empresa?.telefono}
-                        </p>
-                      )}
-                      {item.direccion && (
-                        <p className="text-gray-600 flex items-center gap-1">
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            className="h-3 w-3 text-green-500"
-                            viewBox="0 0 20 20"
-                            fill="currentColor"
-                          >
-                            <path
-                              fillRule="evenodd"
-                              d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z"
-                              clipRule="evenodd"
-                            />
-                          </svg>
-                          {item.direccion.calle} {item.direccion.numero},{" "}
-                          {item.direccion.ciudad} ({item.direccion.provincia})
-                        </p>
-                      )}
-                    </div>
-
-                    {item.direccion?.coordenadas && (
-                      <div onClick={(e) => e.stopPropagation()}>
-                        <MapContainer
-                          center={[
-                            item.direccion.coordenadas.lat,
-                            item.direccion.coordenadas.lng,
-                          ]}
-                          zoom={16}
-                          scrollWheelZoom={false}
-                          className="w-full h-36 rounded-b-xl overflow-hidden border-t border-gray-200"
-                        >
-                          <TileLayer
-                            url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
-                            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/">CARTO</a>'
-                          />
-                          <Marker
-                            position={[
-                              item.direccion.coordenadas.lat,
-                              item.direccion.coordenadas.lng,
-                            ]}
-                            icon={empresaIcon}
-                          >
-                            <Popup>{item.empresa?.nombre}</Popup>
-                          </Marker>
-                        </MapContainer>
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-        </div>
+                    empresa={item}
+                    imagen={imagenes[item._id]}
+                  />
+                ))}
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {pedidos.length === 0 && !loading && <p>No hay pedidos aún</p>}
+            {pedidos.map((pedido) => (
+              <PedidoCard key={pedido._id} pedido={pedido} />
+            ))}
+          </div>
+        )}
       </section>
     </div>
   );

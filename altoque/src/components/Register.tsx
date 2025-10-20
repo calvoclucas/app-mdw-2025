@@ -20,9 +20,17 @@ const Register: React.FC = () => {
     setError("");
 
     try {
+      const userCredential = await createUserWithEmailAndPassword(
+        auth,
+        email,
+        password
+      );
+      const firebaseUser = userCredential.user;
+
       const apiResponse = await axios.post(
         "http://localhost:3001/Api/RegisterUser",
         {
+          firebaseUid: firebaseUser.uid,
           email,
           name,
           lastName,
@@ -31,13 +39,6 @@ const Register: React.FC = () => {
       );
 
       console.log("API Response:", apiResponse.data);
-
-      const userCredential = await createUserWithEmailAndPassword(
-        auth,
-        email,
-        password
-      );
-      const firebaseUser = userCredential.user;
 
       toast.success("¡Registrado correctamente!", { duration: 3000 });
       navigate("/");

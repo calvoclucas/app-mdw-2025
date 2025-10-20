@@ -1,4 +1,5 @@
 import { Schema, model, InferSchemaType, Types } from "mongoose";
+import Historial from "./Historial";
 
 const pedidoSchema = new Schema(
   {
@@ -15,4 +16,35 @@ const pedidoSchema = new Schema(
 );
 
 export type PedidoType = InferSchemaType<typeof pedidoSchema>;
+
+pedidoSchema.post("save", async function (doc) {
+  try {
+    await Historial.create({
+      id_pedido: doc._id,
+      estado: doc.estado,
+      fecha: new Date(),
+    });
+    console.log("Historial creado automáticamente para pedido:", doc._id);
+  } catch (err) {
+    console.error("Error al crear historial:", err);
+  }
+});
+
+pedidoSchema.post("findOneAndUpdate", async function (doc) {
+  if (!doc) return;
+  try {
+    await Historial.create({
+      id_pedido: doc._id,
+      estado: doc.estado,
+      fecha: new Date(),
+    });
+    console.log(
+      "Historial creado automáticamente al actualizar pedido:",
+      doc._id
+    );
+  } catch (err) {
+    console.error("Error al crear historial:", err);
+  }
+});
+
 export default model<PedidoType>("Pedido", pedidoSchema);

@@ -1,4 +1,4 @@
-import { Schema, model, InferSchemaType, Types } from "mongoose";
+import { Schema, model } from "mongoose";
 
 const userSchema = new Schema(
   {
@@ -12,18 +12,11 @@ const userSchema = new Schema(
       required: true,
       default: "cliente",
     },
-    cliente: { type: Types.ObjectId, ref: "Cliente" },
-    empresa: { type: Types.ObjectId, ref: "Empresa" },
-    firebaseUid: {
-      type: String,
-      required: false,
-      unique: true,
-    },
+    cliente: { type: Schema.Types.ObjectId, ref: "Cliente" },
+    empresa: { type: Schema.Types.ObjectId, ref: "Empresa" },
+    firebaseUid: { type: String, required: false, unique: true },
   },
-  {
-    timestamps: true,
-  }
+  { timestamps: true }
 );
 
-export type UserType = InferSchemaType<typeof userSchema>;
-export default model<UserType>("User", userSchema);
+export default model("User", userSchema);

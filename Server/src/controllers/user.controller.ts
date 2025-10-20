@@ -1,5 +1,8 @@
 import { Request, Response } from "express";
 import User from "../models/User";
+import Empresa from "../models/Empresa";
+import Cliente from "../models/Cliente";
+import { Types } from "mongoose";
 
 export const getUsers = async (req: Request, res: Response) => {
   try {
@@ -14,7 +17,8 @@ export const getUsers = async (req: Request, res: Response) => {
 
 export const RegisterUser = async (req: Request, res: Response) => {
   try {
-    const { firebaseUid, email, name, lastName, role } = req.body;
+    const { firebaseUid, email, name, lastName, role, telefono, password } =
+      req.body;
 
     if (!firebaseUid || !email || !name || !lastName || !role) {
       return res.status(400).json({ error: "Todos los campos son requeridos" });
@@ -35,9 +39,44 @@ export const RegisterUser = async (req: Request, res: Response) => {
     });
 
     const newUser = await user.save();
-    res
-      .status(201)
-      .json({ message: "Usuario creado correctamente", user: newUser });
+
+    let perfilCreado = null;
+
+    if (role === "empresa") {
+      const empresa = new Empresa({
+        nombre: `${name} ${lastName}`,
+        email,
+        telefono: telefono || "",
+      });
+      const empresaGuardada = await empresa.save();
+
+      newUser.empresa = empresaGuardada._id as Types.ObjectId;
+      await newUser.save();
+      perfilCreado = empresaGuardada;
+    } else if (role === "cliente") {
+      if (!password)
+        return res
+          .status(400)
+          .json({ error: "Password es requerido para cliente" });
+
+      const cliente = new Cliente({
+        nombre: `${name} ${lastName}`,
+        email,
+        password,
+        telefono: telefono || "",
+      });
+      const clienteGuardado = await cliente.save();
+
+      newUser.cliente = clienteGuardado._id as Types.ObjectId;
+      await newUser.save();
+      perfilCreado = clienteGuardado;
+    }
+
+    res.status(201).json({
+      message: "Usuario registrado correctamente",
+      user: newUser,
+      perfil: perfilCreado,
+    });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Error al registrar usuario" });

@@ -7,6 +7,10 @@ export interface AppUser {
   name: string;
   lastName: string;
   role?: "cliente" | "empresa";
+  empresa?: {
+    _id: string;
+    nombre: string;
+  };
 }
 
 interface AuthState {

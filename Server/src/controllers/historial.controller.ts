@@ -64,3 +64,41 @@ export const DeleteHistorial = async (req: Request, res: Response) => {
     res.status(500).json({ error: "Error al eliminar el historial" });
   }
 };
+
+export const GetHistorialesByCliente = async (req: Request, res: Response) => {
+  try {
+    const { idCliente } = req.params;
+    const historiales = await Historial.find().populate({
+      path: "id_pedido",
+      match: { id_cliente: idCliente },
+    });
+
+    const historialesFiltrados = historiales.filter((h) => h.id_pedido);
+
+    res.json(historialesFiltrados);
+  } catch (err) {
+    console.error(err);
+    res
+      .status(500)
+      .json({ error: "Error al traer los historiales del cliente" });
+  }
+};
+
+export const GetHistorialesByEmpresa = async (req: Request, res: Response) => {
+  try {
+    const { idEmpresa } = req.params;
+    const historiales = await Historial.find().populate({
+      path: "id_pedido",
+      match: { id_empresa: idEmpresa },
+    });
+
+    const historialesFiltrados = historiales.filter((h) => h.id_pedido);
+
+    res.json(historialesFiltrados);
+  } catch (err) {
+    console.error(err);
+    res
+      .status(500)
+      .json({ error: "Error al traer los historiales de la empresa" });
+  }
+};
