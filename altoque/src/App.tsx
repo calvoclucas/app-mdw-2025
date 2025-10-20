@@ -6,6 +6,7 @@ import Dashboard from "./components/Dashboard";
 import CheckoutPedido from "./components/CheckoutPedido";
 import ProductsEmpresa from "./components/ProductsEmpresa";
 import Historiales from "./components/Historiales";
+import Productos from "./components/ABMProductos";
 
 const App: React.FC = () => {
   return (
@@ -17,6 +18,7 @@ const App: React.FC = () => {
         <Route path="/empresa/:id" element={<ProductsEmpresa />} />
         <Route path="/checkout" element={<CheckoutPedido />} />
         <Route path="/historial/:id" element={<Historiales />} />
+        <Route path="/productos/:id" element={<Productos />} />
       </Routes>
     </BrowserRouter>
   );

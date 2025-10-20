@@ -217,7 +217,10 @@ const Dashboard: React.FC = () => {
   const [imagenes, setImagenes] = useState<{ [key: string]: string }>({});
   const [loading, setLoading] = useState(true);
 
-  const handleLogout = () => dispatch(logout());
+  const handleLogout = () => {
+    dispatch(logout());
+    navigate("/");
+  };
 
   useEffect(() => {
     if (state?.mensaje) {
@@ -239,57 +242,47 @@ const Dashboard: React.FC = () => {
             "http://localhost:3001/Api/GetEmpresasConUsuario"
           );
 
-          console.log("Respuesta recibida:", res.data.length, "empresas");
           const data = res.data.filter((e) => e.empresa);
-          console.log("Empresas con datos filtradas:", data.length);
           setEmpresas(data);
 
           const nuevasImagenes: { [key: string]: string } = {};
-
           await Promise.all(
             data.map(async (empresa) => {
-              try {
-                let imageUrl = fetchLogoFromLogoDev(empresa.empresa!.nombre);
-                if (!imageUrl) {
-                  const query = empresa.empresa!.nombre.trim() || "restaurant";
-                  console.log("Buscando imagen en Pexels para:", query);
-                  imageUrl = await fetchImageFromPexels(query, API_KEY);
-                  console.log("Imagen encontrada:", imageUrl);
-                }
-                nuevasImagenes[empresa._id] = imageUrl;
-              } catch (err) {
-                console.warn(
-                  "Error cargando imagen para",
-                  empresa.empresa!.nombre,
-                  err
-                );
-                nuevasImagenes[empresa._id] = genericRestaurantImage;
+              let imageUrl = fetchLogoFromLogoDev(empresa.empresa!.nombre);
+              if (!imageUrl) {
+                const query = empresa.empresa!.nombre.trim() || "restaurant";
+                imageUrl = await fetchImageFromPexels(query, API_KEY);
               }
+              nuevasImagenes[empresa._id] = imageUrl || genericRestaurantImage;
             })
           );
           setImagenes(nuevasImagenes);
-        } else if (user.role === "empresa" && user.empresa) {
-          const res = await axios.get<Historial[]>(
-            `http://localhost:3001/Api/GetHistorialesByEmpresa/${user.empresa._id}`
-          );
+        }
 
-          const pedidosNormalizados: Pedido[] = res.data.map((p) => ({
-            _id: p._id,
-            clienteNombre: p.id_pedido?.id_cliente || "Cliente desconocido",
-            total: p.id_pedido?.total || 0,
-            estado: p.estado || p.id_pedido?.estado || "Desconocido",
-            createdAt:
-              p.id_pedido?.createdAt || p.fecha || new Date().toISOString(),
-          }));
+        const esEmpresa = user.role === "empresa" || !!user.empresa;
+        if (esEmpresa) {
+          const empresaId = user.empresa?._id || user._id;
+          if (!empresaId) {
+            console.warn("No se pudo determinar ID de empresa");
+          } else {
+            const res = await axios.get<Historial[]>(
+              `http://localhost:3001/Api/GetHistorialesByEmpresa/${empresaId}`
+            );
 
-          setPedidos(pedidosNormalizados);
-        } else if (user.role === "empresa") {
-          console.warn(
-            "No se pudo obtener el ID de la empresa del usuario",
-            user
-          );
+            const pedidosNormalizados: Pedido[] = res.data.map((p) => ({
+              _id: p._id,
+              clienteNombre: p.id_pedido?.id_cliente || "Cliente desconocido",
+              total: p.id_pedido?.total || 0,
+              estado: p.id_pedido?.estado || p.estado || "Desconocido",
+              createdAt:
+                p.id_pedido?.createdAt || p.fecha || new Date().toISOString(),
+            }));
+
+            setPedidos(pedidosNormalizados);
+          }
         }
       } catch (err) {
+        console.error("Error cargando datos del dashboard:", err);
       } finally {
         setLoading(false);
       }
@@ -299,7 +292,10 @@ const Dashboard: React.FC = () => {
   }, [user]);
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen relative overflow-hidden bg-gradient-to-br from-orange-50 via-yellow-50 to-amber-50">
+      <div className="absolute top-0 left-0 w-72 h-72 bg-yellow-200 rounded-full mix-blend-multiply filter blur-xl opacity-30 animate-blob"></div>
+      <div className="absolute top-0 right-0 w-72 h-72 bg-orange-200 rounded-full mix-blend-multiply filter blur-xl opacity-30 animate-blob animation-delay-2000"></div>
+      <div className="absolute bottom-0 left-1/2 w-72 h-72 bg-amber-200 rounded-full mix-blend-multiply filter blur-xl opacity-30 animate-blob animation-delay-4000"></div>
       <header className="bg-white shadow-sm flex items-center justify-between px-4 sm:px-6 py-3 sticky top-0 z-50 border-b border-gray-100">
         <div className="flex items-center gap-3">
           <img src={logo} alt="Logo" className="w-12 h-12 object-contain" />
@@ -311,22 +307,27 @@ const Dashboard: React.FC = () => {
         <div className="flex items-center gap-3">
           {user?.role === "empresa" && (
             <button
-              onClick={() => navigate("/productos")}
               className="bg-blue-600 text-white px-3 py-1.5 rounded-full font-semibold shadow-sm hover:bg-blue-700 transition-colors text-sm"
+              onClick={() => {
+                const id =
+                  user?.role === "empresa" ? user?.empresa?._id : user?._id;
+                navigate(`/productos/${id}`, { state: { tipo: user?.role } });
+              }}
             >
               Administrar Productos
             </button>
           )}
           <button
+            className="bg-green-600 text-white px-3 py-1.5 rounded-full font-semibold shadow-sm hover:bg-green-300 transition-colors text-sm"
             onClick={() => {
               const id =
                 user?.role === "empresa" ? user?.empresa?._id : user?._id;
-              navigate(`/historial/${id}`);
+              navigate(`/historial/${id}`, { state: { tipo: user?.role } });
             }}
-            className="bg-green-600 text-white px-3 py-1.5 rounded-full font-semibold shadow-sm hover:bg-green-700 transition-colors text-sm"
           >
             Mis Pedidos
           </button>
+
           <button
             onClick={handleLogout}
             className="bg-red-600 text-white px-3 py-1.5 rounded-full font-semibold shadow-sm hover:bg-red-700 transition-colors text-sm"
@@ -387,6 +388,23 @@ const Dashboard: React.FC = () => {
           </>
         )}
       </section>
+      <style>{`
+    @keyframes blob {
+      0% { transform: translate(0px, 0px) scale(1); }
+      33% { transform: translate(30px, -50px) scale(1.1); }
+      66% { transform: translate(-20px, 20px) scale(0.9); }
+      100% { transform: translate(0px, 0px) scale(1); }
+    }
+    .animate-blob {
+      animation: blob 7s infinite;
+    }
+    .animation-delay-2000 {
+      animation-delay: 2s;
+    }
+    .animation-delay-4000 {
+      animation-delay: 4s;
+    }
+  `}</style>
     </div>
   );
 };

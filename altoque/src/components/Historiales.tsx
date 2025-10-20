@@ -2,13 +2,8 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { ArrowLeft } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
-
-interface Pedido {
-  _id: string;
-  estado: string;
-  total: number;
-  fecha: string;
-}
+import { Pedido } from "../types";
+import { useLocation } from "react-router-dom";
 
 interface Historial {
   _id: string;
@@ -20,7 +15,11 @@ interface HistorialesProps {
   tipo?: "cliente" | "empresa";
 }
 
-const Historiales: React.FC<HistorialesProps> = ({ tipo = "cliente" }) => {
+const Historiales: React.FC = () => {
+  const location = useLocation();
+  const tipo =
+    (location.state as { tipo?: "cliente" | "empresa" })?.tipo || "cliente";
+  console.log(tipo);
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
   const [historiales, setHistoriales] = useState<Historial[]>([]);
@@ -38,6 +37,7 @@ const Historiales: React.FC<HistorialesProps> = ({ tipo = "cliente" }) => {
             ? `http://localhost:3001/Api/GetHistorialesByCliente/${id}`
             : `http://localhost:3001/Api/GetHistorialesByEmpresa/${id}`;
 
+        console.log(url);
         const res = await axios.get<Historial[]>(url);
         console.log(res.data);
         setHistoriales(res.data);
@@ -113,31 +113,25 @@ const Historiales: React.FC<HistorialesProps> = ({ tipo = "cliente" }) => {
         {!loading && historiales.length > 0 && (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {historiales.map((hist) => {
-              const pedido = hist.id_pedido;
-              const estadoColor =
-                pedido.estado === "Entregado"
-                  ? "bg-green-500"
-                  : pedido.estado === "Cancelado"
-                  ? "bg-red-500"
-                  : "bg-yellow-500";
+              const pedidoNormalizado = {
+                total: hist.id_pedido?.total || 0,
+                fecha:
+                  hist.id_pedido?.createdAt ||
+                  hist.fecha ||
+                  new Date().toISOString(),
+              };
 
               return (
                 <div
                   key={hist._id}
                   className="bg-white rounded-2xl shadow-md p-4 border border-orange-100 hover:shadow-xl transition-all"
                 >
-                  <div className="flex justify-between items-center mb-2">
-                    <span
-                      className={`px-2 py-1 rounded-full text-white text-xs font-semibold ${estadoColor}`}
-                    >
-                      {pedido.estado.toUpperCase()}
-                    </span>
-                  </div>
                   <p className="text-gray-600 mb-1">
-                    Total: ${pedido.total.toFixed(2)}
+                    Total: ${pedidoNormalizado.total.toFixed(2)}
                   </p>
                   <p className="text-gray-500 text-xs">
-                    Fecha del pedido: {new Date(pedido.fecha).toLocaleString()}
+                    Fecha del pedido:{" "}
+                    {new Date(pedidoNormalizado.fecha).toLocaleString()}
                   </p>
                   <p className="text-gray-500 text-xs">
                     Fecha del historial: {new Date(hist.fecha).toLocaleString()}
