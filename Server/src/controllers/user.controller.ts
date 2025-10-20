@@ -14,9 +14,9 @@ export const getUsers = async (req: Request, res: Response) => {
 
 export const RegisterUser = async (req: Request, res: Response) => {
   try {
-    const { email, name, lastName, role } = req.body;
+    const { firebaseUid, email, name, lastName, role } = req.body;
 
-    if (!email || !name || !lastName || !role) {
+    if (!firebaseUid || !email || !name || !lastName || !role) {
       return res.status(400).json({ error: "Todos los campos son requeridos" });
     }
 
@@ -26,6 +26,7 @@ export const RegisterUser = async (req: Request, res: Response) => {
     }
 
     const user = new User({
+      firebaseUid,
       email,
       name,
       lastName,

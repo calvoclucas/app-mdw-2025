@@ -9,22 +9,24 @@ export const login = async (req: Request, res: Response) => {
 
     const decodedToken = await admin.auth().verifyIdToken(token);
     const { uid, email, name, picture, family_name } = decodedToken;
-    let user = await User.findOne({ uid });
+
+    let user = await User.findOne({ firebaseUid: uid });
+
+    if (!user && email) {
+      user = await User.findOne({ email });
+    }
 
     if (!user) {
-      user = await User.findOne({ email });
-
-      if (!user) {
-        user = new User({
-          uid,
-          email,
-          name: name || "Sin nombre",
-          lastName: family_name || "Sin apellido",
-          avatar: picture || "",
-        });
-        await user.save();
-      }
+      user = new User({
+        firebaseUid: uid,
+        email,
+        name: name || "Sin nombre",
+        lastName: family_name || "Sin apellido",
+        avatar: picture || "",
+      });
+      await user.save();
     }
+
     res.json({ message: "Login exitoso", user });
   } catch (error: any) {
     console.error(error);

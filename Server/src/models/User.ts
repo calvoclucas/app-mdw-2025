@@ -14,8 +14,15 @@ const userSchema = new Schema(
     },
     cliente: { type: Types.ObjectId, ref: "Cliente" },
     empresa: { type: Types.ObjectId, ref: "Empresa" },
+    firebaseUid: {
+      type: String,
+      required: false,
+      unique: true,
+    },
   },
-  { timestamps: true }
+  {
+    timestamps: true,
+  }
 );
 
 export type UserType = InferSchemaType<typeof userSchema>;

@@ -23,7 +23,7 @@ interface LoginResponse {
 }
 
 interface AppUser {
-  uid?: string;
+  firebaseUid?: string;
   name: string;
   lastName: string;
   email: string;
@@ -56,7 +56,7 @@ const Login: React.FC = () => {
       );
 
       const appUser: AppUser = {
-        uid: data.user.uid || firebaseUser.uid,
+        firebaseUid: data.user.firebaseUid || firebaseUser.uid,
         email: data.user.email,
         name: data.user.name,
         lastName: data.user.lastName,
