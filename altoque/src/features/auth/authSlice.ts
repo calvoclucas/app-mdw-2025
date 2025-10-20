@@ -1,15 +1,25 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 
 export interface AppUser {
-  uid?: string;
-  _id?: string;
+  _id: string;
+  firebaseUid: string;
   email: string;
   name: string;
   lastName: string;
-  role?: "cliente" | "empresa";
+  role: "empresa" | "cliente";
   empresa?: {
     _id: string;
     nombre: string;
+    email?: string;
+    telefono?: string;
+    costo_envio?: number;
+    horario_apertura?: string;
+    horario_cierre?: string;
+  };
+  cliente?: {
+    _id: string;
+    nombre: string;
+    puntos?: number;
   };
 }
 

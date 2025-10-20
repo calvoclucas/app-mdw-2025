@@ -22,13 +22,22 @@ interface LoginResponse {
   token?: string;
 }
 
-interface AppUser {
+export interface AppUser {
   firebaseUid?: string;
+  _id?: string;
+  email: string;
   name: string;
   lastName: string;
-  email: string;
   role?: "cliente" | "empresa";
-  _id?: string;
+  empresa?: {
+    _id: string;
+    nombre: string;
+  };
+  cliente?: {
+    _id: string;
+    nombre: string;
+    puntos: number;
+  };
 }
 
 const Login: React.FC = () => {
@@ -62,6 +71,8 @@ const Login: React.FC = () => {
         lastName: data.user.lastName,
         role: data.user.role,
         _id: data.user._id,
+        empresa: data.user.empresa,
+        cliente: data.user.cliente,
       };
 
       dispatch(login(appUser as any));

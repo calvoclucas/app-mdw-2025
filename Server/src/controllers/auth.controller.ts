@@ -10,39 +10,47 @@ export const login = async (req: Request, res: Response) => {
     if (!token) return res.status(400).json({ error: "Token requerido" });
 
     const decodedToken = await admin.auth().verifyIdToken(token);
-    const { uid, email, name, family_name, picture } = decodedToken;
+    const { uid, email } = decodedToken;
 
     let user = await User.findOne({ firebaseUid: uid }).populate(
-      "cliente empresa"
+      "empresa cliente"
     );
 
     if (!user && email) {
-      user = await User.findOne({ email }).populate("cliente empresa");
+      user = await User.findOne({ email }).populate("empresa cliente");
     }
 
     if (!user) {
-      user = new User({
-        firebaseUid: uid,
-        email,
-        name: name || "Sin nombre",
-        lastName: family_name || "Sin apellido",
-        role: "cliente",
+      return res.status(404).json({
+        error:
+          "Usuario no encontrado. Debe registrarse antes de iniciar sesión.",
       });
-      await user.save();
     }
 
-    let userResponse: any = {
+    const userResponse: any = {
       _id: user._id,
+      firebaseUid: user.firebaseUid,
       email: user.email,
       name: user.name,
       lastName: user.lastName,
       role: user.role,
+      isActive: user.isActive,
+      createdAt: user.createdAt,
+      updatedAt: user.updatedAt,
     };
 
     if (user.role === "empresa" && user.empresa) {
       const empresa = await Empresa.findById(user.empresa);
       if (empresa) {
-        userResponse.empresa = { _id: empresa._id, nombre: empresa.nombre };
+        userResponse.empresa = {
+          _id: empresa._id,
+          nombre: empresa.nombre,
+          email: empresa.email,
+          telefono: empresa.telefono,
+          costo_envio: empresa.costo_envio,
+          horario_apertura: empresa.horario_apertura,
+          horario_cierre: empresa.horario_cierre,
+        };
       }
     }
 
@@ -59,7 +67,7 @@ export const login = async (req: Request, res: Response) => {
 
     res.json({ message: "Login exitoso", user: userResponse });
   } catch (error: any) {
-    console.error(error);
+    console.error("Error en login:", error);
     res.status(401).json({ error: "Token inválido o expirado" });
   }
 };

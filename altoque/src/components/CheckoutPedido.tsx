@@ -101,10 +101,10 @@ const CheckoutPedido: React.FC = () => {
         tipoEntrega === "domicilio"
           ? user?.role === "cliente"
             ? "68f1c460f11a42140ab02ab4"
-            : "68f1c460f11a42140ab02ab4"
+            : undefined
           : user?.role === "empresa"
           ? "68f1c460f11a42140ab02ab4"
-          : "68f1c460f11a42140ab02ab4";
+          : undefined;
 
       if (!id_direccion)
         throw new Error("No se pudo obtener la dirección para el pedido");

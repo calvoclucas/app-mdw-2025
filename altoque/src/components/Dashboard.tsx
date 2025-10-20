@@ -38,6 +38,19 @@ type Pedido = {
   createdAt: string;
 };
 
+interface Historial {
+  _id: string;
+  id_pedido?: {
+    _id: string;
+    id_cliente?: string;
+    total?: number;
+    estado?: string;
+    createdAt?: string;
+  };
+  estado?: string;
+  fecha?: string;
+}
+
 interface PexelsPhoto {
   photos: Array<{ src: { large2x: string } }>;
 }
@@ -173,7 +186,10 @@ const PedidoCard: React.FC<{ pedido: Pedido }> = ({ pedido }) => (
   <div className="bg-white shadow rounded-xl p-4 flex justify-between items-center">
     <div>
       <p className="font-semibold">{pedido.clienteNombre}</p>
-      <p className="text-gray-500 text-sm">Total: ${pedido.total.toFixed(2)}</p>
+      <p className="text-gray-500 text-sm">
+        Total: ${Number(pedido.total || 0).toFixed(2)}
+      </p>
+
       <p className="text-gray-500 text-sm">Estado: {pedido.estado}</p>
     </div>
     <p className="text-gray-400 text-xs">
@@ -253,10 +269,20 @@ const Dashboard: React.FC = () => {
           );
           setImagenes(nuevasImagenes);
         } else if (user.role === "empresa" && user.empresa) {
-          const res = await axios.get<Pedido[]>(
+          const res = await axios.get<Historial[]>(
             `http://localhost:3001/Api/GetHistorialesByEmpresa/${user.empresa._id}`
           );
-          setPedidos(res.data);
+
+          const pedidosNormalizados: Pedido[] = res.data.map((p) => ({
+            _id: p._id,
+            clienteNombre: p.id_pedido?.id_cliente || "Cliente desconocido",
+            total: p.id_pedido?.total || 0,
+            estado: p.estado || p.id_pedido?.estado || "Desconocido",
+            createdAt:
+              p.id_pedido?.createdAt || p.fecha || new Date().toISOString(),
+          }));
+
+          setPedidos(pedidosNormalizados);
         } else if (user.role === "empresa") {
           console.warn(
             "No se pudo obtener el ID de la empresa del usuario",
@@ -288,7 +314,7 @@ const Dashboard: React.FC = () => {
               onClick={() => navigate("/productos")}
               className="bg-blue-600 text-white px-3 py-1.5 rounded-full font-semibold shadow-sm hover:bg-blue-700 transition-colors text-sm"
             >
-              Productos
+              Administrar Productos
             </button>
           )}
           <button
@@ -299,7 +325,7 @@ const Dashboard: React.FC = () => {
             }}
             className="bg-green-600 text-white px-3 py-1.5 rounded-full font-semibold shadow-sm hover:bg-green-700 transition-colors text-sm"
           >
-            Pedidos
+            Mis Pedidos
           </button>
           <button
             onClick={handleLogout}
