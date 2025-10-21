@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import Direccion from "../models/Direccion";
+import { Types } from "mongoose";
 
 export const GetDirecciones = async (req: Request, res: Response) => {
   try {
@@ -14,9 +15,14 @@ export const GetDirecciones = async (req: Request, res: Response) => {
 export const GetDireccionById = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const direccion = await Direccion.findById(id).populate("id_user");
+
+    const direccion = await Direccion.findOne({
+      id_user: new Types.ObjectId(id),
+    }).populate("id_user");
+
     if (!direccion)
       return res.status(404).json({ message: "Dirección no encontrada" });
+
     res.json(direccion);
   } catch (err) {
     console.error(err);

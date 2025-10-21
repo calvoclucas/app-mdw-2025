@@ -36,6 +36,13 @@ interface LocationState {
   empresaId?: string;
 }
 
+interface Direccion {
+  _id: string;
+  calle?: string;
+  numero?: string;
+  ciudad?: string;
+}
+
 const CheckoutPedido: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -74,14 +81,33 @@ const CheckoutPedido: React.FC = () => {
     cargarMetodosPago();
   }, []);
 
+  const DEFAULT_DIRECCION_ID = "68f1c409f11a42140ab02aa2";
+
+  const obtenerDireccion = async (): Promise<string> => {
+    try {
+      if (tipoEntrega === "domicilio" && user?.role === "cliente") {
+        const res = await axios.get<Direccion>(
+          `http://localhost:3001/Api/GetDireccionById/${user._id}`
+        );
+        if (res.data?._id) return res.data._id;
+        console.warn("No se encontró dirección del cliente, usando default");
+        return DEFAULT_DIRECCION_ID;
+      } else if (tipoEntrega === "retiro" && user?.role === "empresa") {
+        const res = await axios.get<Direccion>(
+          `http://localhost:3001/Api/GetDireccionById/${user.empresa?._id}`
+        );
+        if (res.data?._id) return res.data._id;
+        console.warn("No se encontró dirección de la empresa, usando default");
+        return DEFAULT_DIRECCION_ID;
+      }
+    } catch (err) {
+      console.error("Error al obtener la dirección, usando default:", err);
+    }
+    return DEFAULT_DIRECCION_ID;
+  };
   const handleConfirmarPedido = async () => {
     if (!metodoPagoSeleccionado) {
       alert("Por favor selecciona un método de pago");
-      return;
-    }
-
-    if (!empresaId && !user?.empresa?._id) {
-      alert("Error: No se encontró información de la empresa");
       return;
     }
 
@@ -97,17 +123,9 @@ const CheckoutPedido: React.FC = () => {
         throw new Error("No se pudo obtener el ID del cliente");
       if (!id_empresa)
         throw new Error("No se pudo obtener el ID de la empresa");
-      const id_direccion =
-        tipoEntrega === "domicilio"
-          ? user?.role === "cliente"
-            ? "68f1c460f11a42140ab02ab4"
-            : undefined
-          : user?.role === "empresa"
-          ? "68f1c460f11a42140ab02ab4"
-          : undefined;
 
-      if (!id_direccion)
-        throw new Error("No se pudo obtener la dirección para el pedido");
+      const id_direccion = await obtenerDireccion();
+      console.log("id_direccion:", id_direccion);
 
       const pedidoPayload = {
         id_cliente,
@@ -124,22 +142,40 @@ const CheckoutPedido: React.FC = () => {
         "http://localhost:3001/Api/CreatePedido",
         pedidoPayload
       );
+      console.log("Pedido creado:", pedidoCreado);
+
+      if (!pedidoCreado?._id) {
+        throw new Error("El pedido no devolvió un ID válido");
+      }
+
+      const detallesPayload = carrito.map((item) => ({
+        id_pedido: pedidoCreado._id,
+        id_producto: item._id,
+        cantidad: item.cantidad,
+        precio_unitario: item.precio,
+      }));
+
+      try {
+        const { data: detallesCreados } = await axios.post(
+          "http://localhost:3001/Api/CreateDetallePedido",
+          { detalles: detallesPayload }
+        );
+      } catch (err) {
+        console.error("Error creando detalles:", err);
+      }
 
       await Promise.all(
         carrito.map(async (item) => {
-          await axios.post("http://localhost:3001/Api/CreateDetallePedido", {
-            id_pedido: pedidoCreado._id,
-            id_producto: item._id,
-            cantidad: item.cantidad,
-            precio_unitario: item.precio,
-          });
-
-          await axios.put(
-            `http://localhost:3001/Api/EditProducto/${item._id}`,
-            {
-              $inc: { cantidad: -item.cantidad },
-            }
-          );
+          try {
+            const res = await axios.put(
+              `http://localhost:3001/Api/EditProducto/${item._id}`,
+              {
+                $inc: { cantidad: -item.cantidad },
+              }
+            );
+          } catch (error) {
+            throw error;
+          }
         })
       );
 

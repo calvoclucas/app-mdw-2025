@@ -30,14 +30,41 @@ export const GetDetallePedidoById = async (req: Request, res: Response) => {
   }
 };
 
-export const CreateDetallePedido = async (req: Request, res: Response) => {
+export const GetDetallesByPedido = async (req: Request, res: Response) => {
   try {
-    const detalle = new DetallePedido(req.body);
-    const newDetalle = await detalle.save();
-    res.status(201).json(newDetalle);
+    const { id_pedido } = req.params;
+    const detalles = await DetallePedido.find({ id_pedido })
+      .populate("id_producto")
+      .populate("id_pedido");
+
+    if (!detalles || detalles.length === 0) {
+      return res
+        .status(404)
+        .json({ message: "No hay detalles para este pedido" });
+    }
+
+    res.json(detalles);
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: "Error al crear el detalle de pedido" });
+    res.status(500).json({ error: "Error en el servidor" });
+  }
+};
+
+export const CreateDetallePedido = async (req: Request, res: Response) => {
+  try {
+    const { detalles } = req.body;
+
+    if (!Array.isArray(detalles)) {
+      return res
+        .status(400)
+        .json({ error: "El campo 'detalles' debe ser un array" });
+    }
+    const nuevosDetalles = await DetallePedido.insertMany(detalles);
+
+    res.status(201).json(nuevosDetalles);
+  } catch (err) {
+    console.error("Error al crear detalles del pedido:", err);
+    res.status(500).json({ error: "Error al crear los detalles del pedido" });
   }
 };
 
