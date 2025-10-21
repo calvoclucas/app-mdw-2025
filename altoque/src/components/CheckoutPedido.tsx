@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import axios from "axios";
 import { useSelector } from "react-redux";
 import type { RootState } from "../app/store";
+import FakeCardForm from "./FakeCardForm";
 import {
   ShoppingBag,
   Store,
@@ -367,24 +368,37 @@ const CheckoutPedido: React.FC = () => {
                 </p>
               ) : (
                 <div className="space-y-2">
-                  {metodosPago.map((metodo) => (
-                    <button
-                      key={metodo._id}
-                      onClick={() => setMetodoPagoSeleccionado(metodo._id)}
-                      className={`w-full p-3 rounded-lg border-2 transition-all flex items-center justify-between ${
-                        metodoPagoSeleccionado === metodo._id
-                          ? "border-orange-500 bg-orange-50"
-                          : "border-gray-200 hover:border-orange-300"
-                      }`}
-                    >
-                      <span className="font-semibold text-gray-800">
-                        {metodo.tipo}
-                      </span>
-                      {metodoPagoSeleccionado === metodo._id && (
-                        <CheckCircle className="text-orange-500" size={20} />
-                      )}
-                    </button>
-                  ))}
+                  <div className="space-y-2">
+                    {metodosPago.map((metodo) => (
+                      <div key={metodo._id}>
+                        <button
+                          onClick={() => setMetodoPagoSeleccionado(metodo._id)}
+                          className={`w-full p-3 rounded-lg border-2 transition-all flex items-center justify-between ${
+                            metodoPagoSeleccionado === metodo._id
+                              ? "border-orange-500 bg-orange-50"
+                              : "border-gray-200 hover:border-orange-300"
+                          }`}
+                        >
+                          <span className="font-semibold text-gray-800">
+                            {metodo.tipo}
+                          </span>
+                          {metodoPagoSeleccionado === metodo._id && (
+                            <CheckCircle
+                              className="text-orange-500"
+                              size={20}
+                            />
+                          )}
+                        </button>
+
+                        {metodo.tipo.toLowerCase() === "tarjeta" &&
+                          metodoPagoSeleccionado === metodo._id && (
+                            <div className="mt-3">
+                              <FakeCardForm />
+                            </div>
+                          )}
+                      </div>
+                    ))}
+                  </div>
                 </div>
               )}
             </div>

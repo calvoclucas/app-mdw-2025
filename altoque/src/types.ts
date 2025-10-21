@@ -27,3 +27,9 @@ export type EmpresaConUsuario = {
     coordenadas: { lat: number; lng: number };
   };
 };
+
+export type EstadoPedido =
+  | "pendiente"
+  | "en progreso"
+  | "entregado"
+  | "cancelado";

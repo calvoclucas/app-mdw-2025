@@ -45,7 +45,7 @@ const EstadisticasEmpresa: React.FC<EstadisticasProps> = ({ pedidos }) => {
 
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-2">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-4">
         <div className="bg-white shadow rounded-xl p-4 flex flex-col items-center">
           <p className="text-gray-500">Total Pedidos</p>
           <p className="text-2xl font-bold">{totalPedidos}</p>

@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import PedidoProgressBar from "./PedidosProgressBar";
 import axios from "axios";
 import { ArrowLeft } from "lucide-react";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
@@ -152,10 +153,30 @@ const Historiales: React.FC = () => {
                     Fecha del pedido:{" "}
                     {new Date(pedidoNormalizado.fecha).toLocaleString()}
                   </p>
-                  <p className="text-gray-500 text-xs">
-                    Fecha del historial: {new Date(hist.fecha).toLocaleString()}
-                  </p>
-
+                  {hist.id_pedido && (
+                    <PedidoProgressBar
+                      pedido={{
+                        _id: hist.id_pedido._id,
+                        estado: hist.id_pedido.estado as any,
+                      }}
+                      tipo={tipo}
+                      onUpdate={(id, nuevoEstado) => {
+                        setHistoriales((prev) =>
+                          prev.map((h) =>
+                            h.id_pedido._id === id
+                              ? {
+                                  ...h,
+                                  id_pedido: {
+                                    ...h.id_pedido,
+                                    estado: nuevoEstado,
+                                  },
+                                }
+                              : h
+                          )
+                        );
+                      }}
+                    />
+                  )}
                   <button
                     onClick={() => handleVerDetalle(hist.id_pedido._id)}
                     className="mt-3 w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 transition font-medium"

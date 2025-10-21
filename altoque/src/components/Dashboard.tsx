@@ -8,36 +8,8 @@ import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
 import L from "leaflet";
 import logo from "../assets/logo_altoque.png";
 import EstadisticasEmpresa from "./EstadisticasEmpresa";
-
-type EmpresaConUsuario = {
-  _id: string;
-  email: string;
-  empresa?: {
-    _id: string;
-    nombre: string;
-    email: string;
-    telefono: string;
-    horario_apertura: string;
-    horario_cierre: string;
-    costo_envio: number;
-  };
-  direccion?: {
-    calle: string;
-    numero: number;
-    ciudad: string;
-    provincia: string;
-    cp: string;
-    coordenadas: { lat: number; lng: number };
-  };
-};
-
-type Pedido = {
-  _id: string;
-  clienteNombre: string;
-  total: number;
-  estado: string;
-  createdAt: string;
-};
+import { Pedido, EmpresaConUsuario, EstadoPedido } from "../types";
+import PedidoDashboardBar from "./PedidosProgressDashboard";
 
 interface Historial {
   _id: string;
@@ -232,6 +204,50 @@ const Dashboard: React.FC = () => {
   useEffect(() => {
     if (!user) return;
 
+    const fetchPedidos = async () => {
+      setLoading(true);
+      try {
+        let res;
+        if (user.role === "cliente") {
+          res = await axios.get<Historial[]>(
+            `http://localhost:3001/Api/GetPedidosByCliente/${user._id}`
+          );
+        } else if (user.role === "empresa") {
+          const empresaId = user.empresa?._id || user._id;
+          res = await axios.get<Historial[]>(
+            `http://localhost:3001/Api/GetPedidosByEmpresa/${empresaId}`
+          );
+        }
+
+        const pedidosNormalizados: Pedido[] =
+          res?.data.map((p) => {
+            let estado: EstadoPedido = "pendiente";
+            if (p.id_pedido?.estado === "en progreso") estado = "en progreso";
+
+            return {
+              _id: p._id,
+              clienteNombre: p.id_pedido?.id_cliente || "Cliente desconocido",
+              total: p.id_pedido?.total || 0,
+              estado,
+              createdAt:
+                p.id_pedido?.createdAt || p.fecha || new Date().toISOString(),
+            };
+          }) || [];
+
+        setPedidos(pedidosNormalizados);
+      } catch (err) {
+        console.error("Error cargando pedidos:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchPedidos();
+  }, [user]);
+
+  useEffect(() => {
+    if (!user) return;
+
     const fetchData = async () => {
       setLoading(true);
 
@@ -344,6 +360,26 @@ const Dashboard: React.FC = () => {
           </span>
         </h2>
 
+        {loading && <p>Cargando pedidos...</p>}
+        {!loading && pedidos.length > 0 && (
+          <div className="flex flex-col gap-4">
+            {pedidos.map((pedido) => {
+              const estadoValido: EstadoPedido =
+                pedido.estado === "pendiente" || pedido.estado === "en progreso"
+                  ? pedido.estado
+                  : "pendiente";
+
+              return (
+                <PedidoDashboardBar
+                  key={pedido._id}
+                  pedido={{ ...pedido, estado: estadoValido }}
+                />
+              );
+            })}
+          </div>
+        )}
+        {!loading && pedidos.length === 0 && <p>No hay pedidos aún</p>}
+
         {pedidoMensaje && (
           <div className="mx-4 sm:mx-6 mt-4 p-4 bg-green-50 border border-green-400 text-green-800 rounded-xl shadow-md flex justify-between items-center animate-fade-in">
             <div>
@@ -376,7 +412,7 @@ const Dashboard: React.FC = () => {
           </div>
         ) : (
           <>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-2">
               {pedidos.length === 0 && !loading && <p>No hay pedidos aún</p>}
               {pedidos.map((pedido) => (
                 <PedidoCard key={pedido._id} pedido={pedido} />
