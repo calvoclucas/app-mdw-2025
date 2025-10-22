@@ -378,7 +378,6 @@ const Dashboard: React.FC = () => {
             })}
           </div>
         )}
-        {!loading && pedidos.length === 0 && <p>No hay pedidos aún</p>}
 
         {pedidoMensaje && (
           <div className="mx-4 sm:mx-6 mt-4 p-4 bg-green-50 border border-green-400 text-green-800 rounded-xl shadow-md flex justify-between items-center animate-fade-in">
