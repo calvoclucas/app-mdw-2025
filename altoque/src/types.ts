@@ -1,9 +1,36 @@
 export type Pedido = {
   _id: string;
-  clienteNombre: string;
-  total: number;
-  estado: string;
-  createdAt: string;
+  id_cliente?: {
+    _id: string;
+    nombre: string;
+    email: string;
+    telefono: string;
+  };
+  id_empresa?: {
+    _id: string;
+    nombre: string;
+    email: string;
+    telefono?: string;
+  };
+  id_metodo_pago?: {
+    _id: string;
+    tipo: string;
+  };
+  id_direccion?: {
+    _id: string;
+    calle?: string;
+    numero?: number;
+    ciudad?: string;
+    provincia?: string;
+    cp?: string;
+  };
+  estado?: string;
+  total?: number;
+  tiempo_estimado?: number;
+  fecha?: string;
+  createdAt?: string;
+  updatedAt?: string;
+  __v?: number;
 };
 
 export type EmpresaConUsuario = {

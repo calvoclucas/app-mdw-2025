@@ -11,19 +11,6 @@ import EstadisticasEmpresa from "./EstadisticasEmpresa";
 import { Pedido, EmpresaConUsuario, EstadoPedido } from "../types";
 import PedidoDashboardBar from "./PedidosProgressDashboard";
 
-interface Historial {
-  _id: string;
-  id_pedido?: {
-    _id: string;
-    id_cliente?: string;
-    total?: number;
-    estado?: string;
-    createdAt?: string;
-  };
-  estado?: string;
-  fecha?: string;
-}
-
 interface PexelsPhoto {
   photos: Array<{ src: { large2x: string } }>;
 }
@@ -164,8 +151,12 @@ const PedidoCard: React.FC<{ pedido: Pedido }> = ({ pedido }) => (
 
       <p className="text-gray-500 text-sm">Estado: {pedido.estado}</p>
     </div>
-    <p className="text-gray-400 text-xs">
-      {new Date(pedido.createdAt).toLocaleString()}
+
+    <p>
+      Fecha:{" "}
+      {pedido.fecha
+        ? new Date(pedido.fecha).toLocaleString()
+        : "Fecha no disponible"}
     </p>
   </div>
 );
@@ -209,12 +200,12 @@ const Dashboard: React.FC = () => {
       try {
         let res;
         if (user.role === "cliente") {
-          res = await axios.get<Historial[]>(
+          res = await axios.get<Pedido[]>(
             `http://localhost:3001/Api/GetPedidosByCliente/${user._id}`
           );
         } else if (user.role === "empresa") {
           const empresaId = user.empresa?._id || user._id;
-          res = await axios.get<Historial[]>(
+          res = await axios.get<Pedido[]>(
             `http://localhost:3001/Api/GetPedidosByEmpresa/${empresaId}`
           );
         }
@@ -222,15 +213,14 @@ const Dashboard: React.FC = () => {
         const pedidosNormalizados: Pedido[] =
           res?.data.map((p) => {
             let estado: EstadoPedido = "pendiente";
-            if (p.id_pedido?.estado === "en progreso") estado = "en progreso";
+            if (p?.estado === "en progreso") estado = "en progreso";
 
             return {
               _id: p._id,
-              clienteNombre: p.id_pedido?.id_cliente || "Cliente desconocido",
-              total: p.id_pedido?.total || 0,
+              clienteNombre: p?.id_cliente || "Cliente desconocido",
+              total: p?.total || 0,
               estado,
-              createdAt:
-                p.id_pedido?.createdAt || p.fecha || new Date().toISOString(),
+              fecha: p?.fecha || p?.createdAt || new Date().toISOString(),
             };
           }) || [];
 
@@ -281,17 +271,16 @@ const Dashboard: React.FC = () => {
           if (!empresaId) {
             console.warn("No se pudo determinar ID de empresa");
           } else {
-            const res = await axios.get<Historial[]>(
-              `http://localhost:3001/Api/GetHistorialesByEmpresa/${empresaId}`
+            const res = await axios.get<Pedido[]>(
+              `http://localhost:3001/Api/GetPedidosByEmpresa/${empresaId}`
             );
 
             const pedidosNormalizados: Pedido[] = res.data.map((p) => ({
               _id: p._id,
-              clienteNombre: p.id_pedido?.id_cliente || "Cliente desconocido",
-              total: p.id_pedido?.total || 0,
-              estado: p.id_pedido?.estado || p.estado || "Desconocido",
-              createdAt:
-                p.id_pedido?.createdAt || p.fecha || new Date().toISOString(),
+              clienteNombre: p?.id_cliente || "Cliente desconocido",
+              total: p?.total || 0,
+              estado: p?.estado || p.estado || "Desconocido",
+              fecha: p?.fecha || p?.createdAt || new Date().toISOString(),
             }));
 
             setPedidos(pedidosNormalizados);
@@ -337,7 +326,9 @@ const Dashboard: React.FC = () => {
             className="bg-green-600 text-white px-3 py-1.5 rounded-full font-semibold shadow-sm hover:bg-green-300 transition-colors text-sm"
             onClick={() => {
               const id =
-                user?.role === "empresa" ? user?.empresa?._id : user?._id;
+                user?.role === "empresa"
+                  ? user?.empresa?._id
+                  : user?.cliente?._id;
               navigate(`/historial/${id}`, { state: { tipo: user?.role } });
             }}
           >
@@ -356,7 +347,9 @@ const Dashboard: React.FC = () => {
         <h2 className="text-lg md:text-xl font-medium text-gray-800 mb-5">
           Bienvenido,{" "}
           <span className="text-yellow-400 font-semibold">
-            {user?.name || user?.email || "Usuario"}
+            {`${user?.name || ""} ${user?.lastName || ""}`.trim() ||
+              user?.email ||
+              "Usuario"}
           </span>
         </h2>
 

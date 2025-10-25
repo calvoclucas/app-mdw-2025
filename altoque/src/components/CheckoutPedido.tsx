@@ -116,7 +116,8 @@ const CheckoutPedido: React.FC = () => {
     setError(null);
 
     try {
-      const id_cliente = user?.role === "cliente" ? user._id : undefined;
+      const id_cliente =
+        user?.role === "cliente" ? user.cliente?._id : undefined;
       const id_empresa =
         user?.role === "empresa" ? user.empresa?._id : empresaId;
 
@@ -127,6 +128,7 @@ const CheckoutPedido: React.FC = () => {
 
       const id_direccion = await obtenerDireccion();
       console.log("id_direccion:", id_direccion);
+      console.log("id_cliente:", id_cliente);
 
       const pedidoPayload = {
         id_cliente,

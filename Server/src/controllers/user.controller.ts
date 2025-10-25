@@ -17,8 +17,7 @@ export const getUsers = async (req: Request, res: Response) => {
 
 export const RegisterUser = async (req: Request, res: Response) => {
   try {
-    const { firebaseUid, email, name, lastName, role, telefono, password } =
-      req.body;
+    const { firebaseUid, email, name, lastName, role, telefono } = req.body;
 
     if (!firebaseUid || !email || !name || !lastName || !role) {
       return res.status(400).json({ error: "Todos los campos son requeridos" });
@@ -53,16 +52,12 @@ export const RegisterUser = async (req: Request, res: Response) => {
       newUser.empresa = empresaGuardada._id as Types.ObjectId;
       await newUser.save();
       perfilCreado = empresaGuardada;
-    } else if (role === "cliente") {
-      if (!password)
-        return res
-          .status(400)
-          .json({ error: "Password es requerido para cliente" });
+    }
 
+    if (role === "cliente") {
       const cliente = new Cliente({
         nombre: `${name} ${lastName}`,
         email,
-        password,
         telefono: telefono || "",
       });
       const clienteGuardado = await cliente.save();

@@ -7,8 +7,37 @@ import { Pedido } from "../types";
 
 interface Historial {
   _id: string;
-  id_pedido: Pedido;
-  fecha: string;
+  id_cliente?: {
+    _id: string;
+    nombre: string;
+    email: string;
+    telefono: string;
+  };
+  id_empresa?: {
+    _id: string;
+    nombre: string;
+    email: string;
+    telefono?: string;
+  };
+  id_metodo_pago?: {
+    _id: string;
+    tipo: string;
+  };
+  id_direccion?: {
+    _id: string;
+    calle?: string;
+    numero?: number;
+    ciudad?: string;
+    provincia?: string;
+    cp?: string;
+  };
+  estado?: string;
+  total?: number;
+  tiempo_estimado?: number;
+  fecha?: string;
+  createdAt?: string;
+  updatedAt?: string;
+  __v?: number;
 }
 
 interface DetallePedido {
@@ -56,10 +85,11 @@ const Historiales: React.FC = () => {
       try {
         const url =
           tipo === "cliente"
-            ? `http://localhost:3001/Api/GetHistorialesByCliente/${id}`
-            : `http://localhost:3001/Api/GetHistorialesByEmpresa/${id}`;
+            ? `http://localhost:3001/Api/GetPedidosByCliente/${id}`
+            : `http://localhost:3001/Api/GetPedidosByEmpresa/${id}`;
 
         const res = await axios.get<Historial[]>(url);
+        console.log("Historiales recibidos:", res.data);
         setHistoriales(res.data);
       } catch (err) {
         console.error(err);
@@ -134,11 +164,11 @@ const Historiales: React.FC = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {historiales.map((hist) => {
               const pedidoNormalizado = {
-                total: hist.id_pedido?.total || 0,
-                fecha:
-                  hist.id_pedido?.createdAt ||
-                  hist.fecha ||
-                  new Date().toISOString(),
+                total: hist.total || 0,
+                fecha: hist.fecha || hist.createdAt,
+                estado: hist.estado || "pendiente",
+                clienteNombre: hist.id_cliente?.nombre || "Cliente",
+                empresaNombre: hist.id_empresa?.nombre || "Empresa",
               };
 
               return (
@@ -146,39 +176,32 @@ const Historiales: React.FC = () => {
                   key={hist._id}
                   className="bg-white rounded-2xl shadow-md p-4 border border-orange-100 hover:shadow-xl transition-all"
                 >
-                  <p className="text-gray-600 mb-1">
-                    Total: ${pedidoNormalizado.total.toFixed(2)}
+                  <p>Cliente: {pedidoNormalizado.clienteNombre}</p>
+                  <p>Empresa: {pedidoNormalizado.empresaNombre}</p>
+                  <p>Total: ${pedidoNormalizado.total.toFixed(2)}</p>
+                  <p>
+                    Fecha:{" "}
+                    {pedidoNormalizado.fecha
+                      ? new Date(pedidoNormalizado.fecha).toLocaleString()
+                      : "Fecha no disponible"}
                   </p>
-                  <p className="text-gray-500 text-xs">
-                    Fecha del pedido:{" "}
-                    {new Date(pedidoNormalizado.fecha).toLocaleString()}
-                  </p>
-                  {hist.id_pedido && (
-                    <PedidoProgressBar
-                      pedido={{
-                        _id: hist.id_pedido._id,
-                        estado: hist.id_pedido.estado as any,
-                      }}
-                      tipo={tipo}
-                      onUpdate={(id, nuevoEstado) => {
-                        setHistoriales((prev) =>
-                          prev.map((h) =>
-                            h.id_pedido._id === id
-                              ? {
-                                  ...h,
-                                  id_pedido: {
-                                    ...h.id_pedido,
-                                    estado: nuevoEstado,
-                                  },
-                                }
-                              : h
-                          )
-                        );
-                      }}
-                    />
-                  )}
+
+                  <PedidoProgressBar
+                    pedido={{
+                      _id: hist._id,
+                      estado: pedidoNormalizado.estado as any,
+                    }}
+                    tipo={tipo}
+                    onUpdate={(id, nuevoEstado) => {
+                      setHistoriales((prev) =>
+                        prev.map((h) =>
+                          h._id === id ? { ...h, estado: nuevoEstado } : h
+                        )
+                      );
+                    }}
+                  />
                   <button
-                    onClick={() => handleVerDetalle(hist.id_pedido._id)}
+                    onClick={() => handleVerDetalle(hist._id)}
                     className="mt-3 w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 transition font-medium"
                   >
                     Ver detalle

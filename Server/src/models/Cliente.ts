@@ -4,7 +4,7 @@ const clienteSchema = new Schema(
   {
     nombre: { type: String, required: true },
     email: { type: String, required: true, unique: true },
-    password: { type: String, required: true },
+    password: { type: String },
     telefono: { type: String },
     puntos: { type: Number, default: 0 },
   },
