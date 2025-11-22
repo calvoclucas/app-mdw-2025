@@ -27,7 +27,7 @@ const empresaIcon = new L.Icon({
 });
 
 const fetchLogoFromLogoDev = (companyName: string): string | null => {
-  if (companyName.toLowerCase().includes("donald")) {
+  if (companyName.toLowerCase().includes("Donald")) {
     return "https://img.logo.dev/McDonald's?size=256";
   }
   return null;

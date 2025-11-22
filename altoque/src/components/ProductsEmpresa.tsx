@@ -143,7 +143,7 @@ const ProductosEmpresa: React.FC = () => {
         <div className="flex justify-center mb-6">
           <div className="bg-white rounded-2xl shadow-lg">
             <img
-              src="/src/assets/logo_altoque.png"
+              src="/logo_altoque.png"
               alt="AlToque"
               className="h-16 w-16 object-contain rounded-2xl"
             />
