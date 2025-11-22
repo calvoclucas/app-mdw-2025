@@ -56,13 +56,14 @@ const ProductosEmpresa: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [imagenes, setImagenes] = useState<{ [key: string]: string }>({});
   const [carritoAbierto, setCarritoAbierto] = useState(false);
+  const API_URL = import.meta.env.VITE_BACKEND_URL;
 
   useEffect(() => {
     if (!id) return;
     setLoading(true);
 
     axios
-      .get<Producto[]>(`http://localhost:3001/Api/GetProductosByEmpresa/${id}`)
+      .get<Producto[]>(`${API_URL}/Api/GetProductosByEmpresa/${id}`)
       .then(async (res) => {
         setProductos(res.data);
 

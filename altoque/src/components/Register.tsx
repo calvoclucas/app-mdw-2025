@@ -14,6 +14,7 @@ const Register: React.FC = () => {
   const [role, setRole] = useState("cliente");
   const [error, setError] = useState("");
   const navigate = useNavigate();
+  const API_URL = import.meta.env.VITE_BACKEND_URL;
 
   const handleRegister = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -27,16 +28,13 @@ const Register: React.FC = () => {
       );
       const firebaseUser = userCredential.user;
 
-      const apiResponse = await axios.post(
-        "http://localhost:3001/Api/RegisterUser",
-        {
-          firebaseUid: firebaseUser.uid,
-          email,
-          name,
-          lastName,
-          role,
-        }
-      );
+      const apiResponse = await axios.post(`${API_URL}/Api/RegisterUser`, {
+        firebaseUid: firebaseUser.uid,
+        email,
+        name,
+        lastName,
+        role,
+      });
 
       console.log("API Response:", apiResponse.data);
 

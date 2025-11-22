@@ -7,7 +7,7 @@ import { useNavigate } from "react-router-dom";
 import type { AppDispatch } from "../app/store.js";
 import logo from "../assets/logo_altoque.png";
 import axios from "axios";
-
+const API_URL = import.meta.env.VITE_BACKEND_URL;
 interface LoginResponse {
   message: string;
   user: {
@@ -59,10 +59,9 @@ const Login: React.FC = () => {
       );
       const firebaseUser = userCredential.user;
       const token = await firebaseUser.getIdToken();
-      const { data } = await axios.post<LoginResponse>(
-        "http://localhost:3001/api/login",
-        { token }
-      );
+      const { data } = await axios.post<LoginResponse>(`${API_URL}/api/login`, {
+        token,
+      });
 
       const appUser: AppUser = {
         firebaseUid: data.user.firebaseUid || firebaseUser.uid,

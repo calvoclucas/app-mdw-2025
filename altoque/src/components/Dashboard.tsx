@@ -10,6 +10,7 @@ import logo from "../assets/logo_altoque.png";
 import EstadisticasEmpresa from "./EstadisticasEmpresa";
 import { Pedido, EmpresaConUsuario, EstadoPedido } from "../types";
 import PedidoDashboardBar from "./PedidosProgressDashboard";
+const API_URL = import.meta.env.VITE_BACKEND_URL;
 
 interface PexelsPhoto {
   photos: Array<{ src: { large2x: string } }>;
@@ -201,12 +202,12 @@ const Dashboard: React.FC = () => {
         let res;
         if (user.role === "cliente") {
           res = await axios.get<Pedido[]>(
-            `http://localhost:3001/Api/GetPedidosByCliente/${user._id}`
+            `${API_URL}/Api/GetPedidosByCliente/${user._id}`
           );
         } else if (user.role === "empresa") {
           const empresaId = user.empresa?._id || user._id;
           res = await axios.get<Pedido[]>(
-            `http://localhost:3001/Api/GetPedidosByEmpresa/${empresaId}`
+            `${API_URL}/Api/GetPedidosByEmpresa/${empresaId}`
           );
         }
 
@@ -245,7 +246,7 @@ const Dashboard: React.FC = () => {
         if (user.role === "cliente") {
           console.log("Obteniendo empresas...");
           const res = await axios.get<EmpresaConUsuario[]>(
-            "http://localhost:3001/Api/GetEmpresasConUsuario"
+            `${API_URL}/Api/GetEmpresasConUsuario`
           );
 
           const data = res.data.filter((e) => e.empresa);
@@ -272,7 +273,7 @@ const Dashboard: React.FC = () => {
             console.warn("No se pudo determinar ID de empresa");
           } else {
             const res = await axios.get<Pedido[]>(
-              `http://localhost:3001/Api/GetPedidosByEmpresa/${empresaId}`
+              `${API_URL}/Api/GetPedidosByEmpresa/${empresaId}`
             );
 
             const pedidosNormalizados: Pedido[] = res.data.map((p) => ({

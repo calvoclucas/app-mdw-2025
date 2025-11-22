@@ -6,6 +6,8 @@ import { useNavigate } from "react-router-dom";
 import type { RootState } from "../app/store";
 import { AppUser } from "../features/auth/authSlice";
 
+const API_URL = import.meta.env.VITE_API_URL;
+
 interface Producto {
   _id?: string;
   id_empresa: string;
@@ -40,7 +42,7 @@ const ABMProducto: React.FC = () => {
     setLoading(true);
     try {
       const res = await axios.get<Producto[]>(
-        `http://localhost:3001/Api/GetProductosByEmpresa/${empresaId}`
+        `${API_URL}/Api/GetProductosByEmpresa/${empresaId}`
       );
       setProductos(res.data);
     } catch (err) {
@@ -76,11 +78,11 @@ const ABMProducto: React.FC = () => {
     try {
       if (editingProducto) {
         await axios.put(
-          `http://localhost:3001/Api/EditProducto/${editingProducto._id}`,
+          `${API_URL}/Api/EditProducto/${editingProducto._id}`,
           form
         );
       } else {
-        await axios.post(`http://localhost:3001/Api/CreateProducto`, form);
+        await axios.post(`${API_URL}/Api/CreateProducto`, form);
       }
       setModalOpen(false);
       setEditingProducto(null);
@@ -108,7 +110,7 @@ const ABMProducto: React.FC = () => {
     if (!id) return;
     if (!window.confirm("¿Seguro que quieres eliminar este producto?")) return;
     try {
-      await axios.delete(`http://localhost:3001/Api/DeleteProducto/${id}`);
+      await axios.delete(`${API_URL}/Api/DeleteProducto/${id}`);
       fetchProductos();
     } catch (err) {
       console.error(err);

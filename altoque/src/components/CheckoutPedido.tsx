@@ -13,6 +13,8 @@ import {
   CheckCircle,
 } from "lucide-react";
 
+const API_URL = import.meta.env.VITE_API_URL;
+
 interface PedidoCreado {
   _id: string;
 }
@@ -68,7 +70,7 @@ const CheckoutPedido: React.FC = () => {
     const cargarMetodosPago = async () => {
       try {
         const { data } = await axios.get<MetodoPago[]>(
-          "http://localhost:3001/Api/GetMetodosPago"
+          `${API_URL}/Api/GetMetodosPago`
         );
         setMetodosPago(data);
         if (data.length > 0) setMetodoPagoSeleccionado(data[0]._id);
@@ -79,6 +81,7 @@ const CheckoutPedido: React.FC = () => {
         setLoading(false);
       }
     };
+
     cargarMetodosPago();
   }, []);
 
@@ -88,24 +91,23 @@ const CheckoutPedido: React.FC = () => {
     try {
       if (tipoEntrega === "domicilio" && user?.role === "cliente") {
         const res = await axios.get<Direccion>(
-          `http://localhost:3001/Api/GetDireccionById/${user._id}`
+          `${API_URL}/Api/GetDireccionById/${user._id}`
         );
         if (res.data?._id) return res.data._id;
-        console.warn("No se encontró dirección del cliente, usando default");
         return DEFAULT_DIRECCION_ID;
       } else if (tipoEntrega === "retiro" && user?.role === "empresa") {
         const res = await axios.get<Direccion>(
-          `http://localhost:3001/Api/GetDireccionById/${user.empresa?._id}`
+          `${API_URL}/Api/GetDireccionById/${user.empresa?._id}`
         );
         if (res.data?._id) return res.data._id;
-        console.warn("No se encontró dirección de la empresa, usando default");
         return DEFAULT_DIRECCION_ID;
       }
     } catch (err) {
-      console.error("Error al obtener la dirección, usando default:", err);
+      console.error("Error obteniendo dirección:", err);
     }
     return DEFAULT_DIRECCION_ID;
   };
+
   const handleConfirmarPedido = async () => {
     if (!metodoPagoSeleccionado) {
       alert("Por favor selecciona un método de pago");
@@ -122,13 +124,10 @@ const CheckoutPedido: React.FC = () => {
         user?.role === "empresa" ? user.empresa?._id : empresaId;
 
       if (!id_cliente && user?.role === "cliente")
-        throw new Error("No se pudo obtener el ID del cliente");
-      if (!id_empresa)
-        throw new Error("No se pudo obtener el ID de la empresa");
+        throw new Error("No se pudo obtener ID del cliente");
+      if (!id_empresa) throw new Error("No se pudo obtener ID de la empresa");
 
       const id_direccion = await obtenerDireccion();
-      console.log("id_direccion:", id_direccion);
-      console.log("id_cliente:", id_cliente);
 
       const pedidoPayload = {
         id_cliente,
@@ -142,14 +141,12 @@ const CheckoutPedido: React.FC = () => {
       };
 
       const { data: pedidoCreado } = await axios.post<PedidoCreado>(
-        "http://localhost:3001/Api/CreatePedido",
+        `${API_URL}/Api/CreatePedido`,
         pedidoPayload
       );
-      console.log("Pedido creado:", pedidoCreado);
 
-      if (!pedidoCreado?._id) {
+      if (!pedidoCreado?._id)
         throw new Error("El pedido no devolvió un ID válido");
-      }
 
       const detallesPayload = carrito.map((item) => ({
         id_pedido: pedidoCreado._id,
@@ -158,27 +155,15 @@ const CheckoutPedido: React.FC = () => {
         precio_unitario: item.precio,
       }));
 
-      try {
-        const { data: detallesCreados } = await axios.post(
-          "http://localhost:3001/Api/CreateDetallePedido",
-          { detalles: detallesPayload }
-        );
-      } catch (err) {
-        console.error("Error creando detalles:", err);
-      }
+      await axios.post(`${API_URL}/Api/CreateDetallePedido`, {
+        detalles: detallesPayload,
+      });
 
       await Promise.all(
         carrito.map(async (item) => {
-          try {
-            const res = await axios.put(
-              `http://localhost:3001/Api/EditProducto/${item._id}`,
-              {
-                $inc: { cantidad: -item.cantidad },
-              }
-            );
-          } catch (error) {
-            throw error;
-          }
+          await axios.put(`${API_URL}/Api/EditProducto/${item._id}`, {
+            $inc: { cantidad: -item.cantidad },
+          });
         })
       );
 
@@ -199,10 +184,8 @@ const CheckoutPedido: React.FC = () => {
       });
     } catch (err) {
       console.error("Error al confirmar pedido:", err);
-      setError(
-        "Hubo un error al procesar tu pedido. Por favor intenta nuevamente."
-      );
-      alert("Hubo un error al procesar tu pedido. Intenta nuevamente.");
+      setError("Hubo un error al procesar tu pedido.");
+      alert("Hubo un error. Intenta nuevamente.");
     } finally {
       setProcesando(false);
     }

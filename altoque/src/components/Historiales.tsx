@@ -4,6 +4,7 @@ import axios from "axios";
 import { ArrowLeft } from "lucide-react";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { Pedido } from "../types";
+const API_URL = import.meta.env.VITE_BACKEND_URL;
 
 interface Historial {
   _id: string;
@@ -67,8 +68,9 @@ const Historiales: React.FC = () => {
   const handleVerDetalle = async (idPedido: string) => {
     try {
       const { data } = await axios.get<DetallePedido[]>(
-        `http://localhost:3001/Api/GetDetallesByPedido/${idPedido}`
+        `${API_URL}/Api/GetDetallesByPedido/${idPedido}`
       );
+
       setDetalles(data);
       setModalOpen(true);
     } catch (err) {
@@ -85,8 +87,8 @@ const Historiales: React.FC = () => {
       try {
         const url =
           tipo === "cliente"
-            ? `http://localhost:3001/Api/GetPedidosByCliente/${id}`
-            : `http://localhost:3001/Api/GetPedidosByEmpresa/${id}`;
+            ? `${API_URL}/Api/GetPedidosByCliente/${id}`
+            : `${API_URL}/Api/GetPedidosByEmpresa/${id}`;
 
         const res = await axios.get<Historial[]>(url);
         console.log("Historiales recibidos:", res.data);

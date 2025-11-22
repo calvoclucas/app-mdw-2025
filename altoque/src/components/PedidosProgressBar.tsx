@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import axios from "axios";
 import { motion, AnimatePresence } from "framer-motion";
 import { Check, Clock, Truck, XCircle, AlertTriangle } from "lucide-react";
-
+const API_URL = import.meta.env.VITE_BACKEND_URL;
 type EstadoPedido = "pendiente" | "en progreso" | "entregado" | "cancelado";
 
 interface Pedido {
@@ -51,9 +51,10 @@ export default function PedidoProgressBar({
   const handleChangeEstado = async (nuevoEstado: EstadoPedido) => {
     setLoading(true);
     try {
-      await axios.put(`http://localhost:3001/Api/EditPedido/${pedido._id}`, {
+      await axios.put(`${API_URL}/Api/EditPedido/${pedido._id}`, {
         estado: nuevoEstado,
       });
+
       onUpdate?.(pedido._id, nuevoEstado);
     } catch (err) {
       console.error("Error al actualizar el pedido:", err);

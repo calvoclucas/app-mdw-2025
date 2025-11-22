@@ -36,7 +36,8 @@ const EstadisticasEmpresa: React.FC<EstadisticasProps> = ({ pedidos }) => {
     const años: Record<string, number> = {};
 
     pedidos.forEach((p) => {
-      const year = new Date(p.createdAt).getFullYear().toString();
+      const fecha = p.createdAt ? new Date(p.createdAt) : new Date();
+      const year = fecha.getFullYear().toString();
       años[year] = (años[year] || 0) + (p.total || 0);
     });
 
