@@ -1,2 +1,12 @@
 @import "tailwindcss";
 @import url("https://unpkg.com/leaflet@1.9.4/dist/leaflet.css");
+
+@keyframes slide-in {
+  0% { transform: translateX(100%); opacity: 0; }
+  100% { transform: translateX(0); opacity: 1; }
+}
+.animate-slide-in {
+  animation: slide-in 0.5s ease forwards;
+}
+
+

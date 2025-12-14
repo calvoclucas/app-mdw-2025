@@ -94,6 +94,7 @@ const Dashboard: React.FC = () => {
 
   const [pedidoMensaje, setPedidoMensaje] = useState(state?.mensaje || "");
   const [searchTerm, setSearchTerm] = useState("");
+  const [showGuestToast, setShowGuestToast] = useState(false);
 
   const user = useSelector((state: RootState) => state.auth.user);
   const dispatch = useDispatch<AppDispatch>();
@@ -106,6 +107,10 @@ const Dashboard: React.FC = () => {
   useEffect(() => {
     if (!user) {
       navigate("/login");
+    } else if (user.name === "Invitado") {
+      setShowGuestToast(true);
+      const timer = setTimeout(() => setShowGuestToast(false), 5000);
+      return () => clearTimeout(timer);
     }
   }, [user, navigate]);
 
@@ -176,6 +181,7 @@ const Dashboard: React.FC = () => {
           >
             Mis Pedidos
           </button>
+
           {user?.name !== "Invitado" ? (
             <button
               onClick={handleLogout}
@@ -227,6 +233,27 @@ const Dashboard: React.FC = () => {
               ))}
         </div>
       </section>
+
+      {showGuestToast && (
+        <div className="fixed top-24 right-6 bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 rounded shadow-lg flex items-start gap-3 w-80 animate-slide-in z-50">
+          <svg
+            className="w-6 h-6 flex-shrink-0 mt-1"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M12 20h.01M12 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <div className="flex-1">
+            <p className="font-semibold">Estás navegando como invitado</p>
+            <p className="text-sm text-gray-700">
+              Para ver tus pedidos y obtener una mejor experiencia, inicia sesión en tu cuenta.
+            </p>
+          </div>
+        </div>
+      )}
+      
     </div>
   );
 };
