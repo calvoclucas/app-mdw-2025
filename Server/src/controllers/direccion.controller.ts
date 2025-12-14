@@ -12,7 +12,7 @@ export const GetDirecciones = async (req: Request, res: Response) => {
   }
 };
 
-export const GetDireccionById = async (req: Request, res: Response) => {
+export const GetDireccionByUser = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
 

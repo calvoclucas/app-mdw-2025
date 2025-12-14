@@ -8,14 +8,16 @@ import {
   GetHistorialesByCliente,
   GetHistorialesByEmpresa,
 } from "../controllers/historial.controller";
+import { authOptional } from "../middlewares/authoptional";
+import { authRequired } from "../middlewares/authrequiered";
 
 const router = express.Router();
-router.post("/CreateHistorial", CreateHistorial);
-router.get("/GetHistoriales", GetHistoriales);
-router.get("/GetHistorialesByCliente/:idCliente", GetHistorialesByCliente);
-router.get("/GetHistorialesByEmpresa/:idEmpresa", GetHistorialesByEmpresa);
-router.get("/GetHistorialById/:id_historial", GetHistorialById);
-router.put("/EditHistorial/:id_historial", EditHistorial);
-router.delete("/DeleteHistorial/:id_historial", DeleteHistorial);
+router.post("/CreateHistorial", authRequired, CreateHistorial);
+router.get("/GetHistoriales", authOptional,GetHistoriales);
+router.get("/GetHistorialesByCliente/:idCliente",  authRequired, GetHistorialesByCliente);
+router.get("/GetHistorialesByEmpresa/:idEmpresa",   authRequired,GetHistorialesByEmpresa);
+router.get("/GetHistorialById/:id_historial",  authRequired, GetHistorialById);
+router.put("/EditHistorial/:id",  authRequired, EditHistorial);
+router.delete("/DeleteHistorial/:id",   authRequired,DeleteHistorial);
 
 export default router;

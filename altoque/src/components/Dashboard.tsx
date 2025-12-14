@@ -4,64 +4,13 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { logout } from "../features/auth/authSlice.js";
 import type { RootState, AppDispatch } from "../app/store.js";
 import axios from "axios";
-import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
-import L from "leaflet";
+import { EmpresaConUsuario } from "../types";
 import logo from "../assets/logo_altoque.png";
-import EstadisticasEmpresa from "./EstadisticasEmpresa";
-import { Pedido, EmpresaConUsuario, EstadoPedido } from "../types";
-import PedidoDashboardBar from "./PedidosProgressDashboard";
+
 const API_URL = import.meta.env.VITE_BACKEND_URL;
 
-interface PexelsPhoto {
-  photos: Array<{ src: { large2x: string } }>;
-}
-
-const API_KEY = import.meta.env.VITE_PEXELS_API_KEY;
 const genericRestaurantImage =
   "https://images.pexels.com/photos/262978/pexels-photo-262978.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2";
-
-const empresaIcon = new L.Icon({
-  iconUrl: "https://cdn-icons-png.flaticon.com/512/854/854878.png",
-  iconSize: [28, 28],
-  iconAnchor: [14, 28],
-});
-
-const fetchLogoFromLogoDev = (companyName: string): string | null => {
-  if (companyName.toLowerCase().includes("Donald")) {
-    return "https://img.logo.dev/McDonald's?size=256";
-  }
-  return null;
-};
-
-const fetchImageFromPexels = async (
-  query: string,
-  apiKey: string
-): Promise<string> => {
-  const termsToTry = [
-    query,
-    "restaurant interior",
-    "food delivery",
-    "restaurant",
-    "food",
-  ];
-  for (const term of termsToTry) {
-    if (!term) continue;
-    try {
-      const response = await axios.get<PexelsPhoto>(
-        `https://api.pexels.com/v1/search?query=${encodeURIComponent(
-          term
-        )}&per_page=1`,
-        { headers: { Authorization: apiKey } }
-      );
-      if (response.data.photos?.[0]?.src.large2x) {
-        return response.data.photos[0].src.large2x;
-      }
-    } catch (error) {
-      console.warn(`Pexels API error for query "${term}":`, error);
-    }
-  }
-  return genericRestaurantImage;
-};
 
 const CardSkeleton: React.FC = () => (
   <div className="bg-white rounded-xl shadow-sm overflow-hidden animate-pulse">
@@ -102,12 +51,12 @@ const EmpresaCard: React.FC<{ empresa: EmpresaConUsuario; imagen: string }> = ({
 
   return (
     <div
-      className="group bg-white rounded-xl shadow-sm overflow-hidden transform transition duration-300 hover:scale-[1.03] hover:shadow-md border border-gray-100 m-8 cursor-pointer"
+      className="group bg-white rounded-xl shadow-sm overflow-hidden transform transition duration-300 hover:scale-[1.03] hover:shadow-md border border-gray-100 m-4 cursor-pointer"
       onClick={handleClick}
     >
       <div className="relative">
         <img
-          src={imagen}
+          src={imagen || genericRestaurantImage}
           alt={empresa.empresa?.nombre || "Empresa"}
           className="w-full h-36 object-cover transition duration-300 hover:opacity-90"
           onError={(e) => {
@@ -123,186 +72,90 @@ const EmpresaCard: React.FC<{ empresa: EmpresaConUsuario; imagen: string }> = ({
             : `CERRADO | Abre ${empresa.empresa?.horario_apertura}`}
         </div>
         <div className="absolute bottom-2 right-2 bg-white text-gray-800 px-2 py-1 text-xs font-semibold rounded-full shadow">
-          Envío: ${empresa.empresa?.costo_envio.toFixed(2)}
+          Envío: ${empresa.empresa?.costo_envio?.toFixed(2) || "0.00"}
         </div>
       </div>
-      <div className="p-5 flex flex-col gap-2 text-sm">
+      <div className="p-4 flex flex-col gap-2 text-sm">
         <h3 className="text-base font-semibold text-gray-900 truncate group-hover:text-yellow-500 transition-colors">
           {empresa.empresa?.nombre}
         </h3>
-        <p className="text-gray-600 flex items-center gap-1">
-          {empresa.empresa?.email}
-        </p>
+        <p className="text-gray-600">{empresa.empresa?.email}</p>
         {empresa.empresa?.telefono && (
-          <p className="text-gray-600 flex items-center gap-1">
-            {empresa.empresa.telefono}
-          </p>
+          <p className="text-gray-600">{empresa.empresa.telefono}</p>
         )}
       </div>
     </div>
   );
 };
 
-const PedidoCard: React.FC<{ pedido: Pedido }> = ({ pedido }) => (
-  <div className="bg-white shadow rounded-xl p-4 flex justify-between items-center">
-    <div>
-      <p className="text-gray-500 text-sm">
-        Total: ${Number(pedido.total || 0).toFixed(2)}
-      </p>
-
-      <p className="text-gray-500 text-sm">Estado: {pedido.estado}</p>
-    </div>
-
-    <p>
-      Fecha:{" "}
-      {pedido.fecha
-        ? new Date(pedido.fecha).toLocaleString()
-        : "Fecha no disponible"}
-    </p>
-  </div>
-);
-
 const Dashboard: React.FC = () => {
   const location = useLocation();
-  const state = location.state as
-    | { mensaje?: string; tiempoEstimado?: number; horaListo?: string }
-    | undefined;
+  const state = location.state as { mensaje?: string } | undefined;
 
   const [pedidoMensaje, setPedidoMensaje] = useState(state?.mensaje || "");
-  const [tiempoEstimado, setTiempoEstimado] = useState(state?.tiempoEstimado);
-  const [horaListo, setHoraListo] = useState(state?.horaListo);
+  const [searchTerm, setSearchTerm] = useState("");
 
   const user = useSelector((state: RootState) => state.auth.user);
   const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
 
   const [empresas, setEmpresas] = useState<EmpresaConUsuario[]>([]);
-  const [pedidos, setPedidos] = useState<Pedido[]>([]);
   const [imagenes, setImagenes] = useState<{ [key: string]: string }>({});
   const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!user) {
+      navigate("/login");
+    }
+  }, [user, navigate]);
 
   const handleLogout = () => {
     dispatch(logout());
     navigate("/");
   };
 
-  useEffect(() => {
-    if (state?.mensaje) {
-      const timeout = setTimeout(() => setPedidoMensaje(""), 8000);
-      return () => clearTimeout(timeout);
-    }
-  }, [state]);
+  const handleLogin = () => {
+    navigate("/login");
+  };
 
   useEffect(() => {
     if (!user) return;
 
-    const fetchPedidos = async () => {
+    const fetchEmpresas = async () => {
       setLoading(true);
       try {
-        let res;
         if (user.role === "cliente") {
-          res = await axios.get<Pedido[]>(
-            `${API_URL}/Api/GetPedidosByCliente/${user._id}`
-          );
-        } else if (user.role === "empresa") {
-          const empresaId = user.empresa?._id || user._id;
-          res = await axios.get<Pedido[]>(
-            `${API_URL}/Api/GetPedidosByEmpresa/${empresaId}`
-          );
-        }
-
-        const pedidosNormalizados: Pedido[] =
-          res?.data.map((p) => {
-            let estado: EstadoPedido = "pendiente";
-            if (p?.estado === "en progreso") estado = "en progreso";
-
-            return {
-              _id: p._id,
-              clienteNombre: p?.id_cliente || "Cliente desconocido",
-              total: p?.total || 0,
-              estado,
-              fecha: p?.fecha || p?.createdAt || new Date().toISOString(),
-            };
-          }) || [];
-
-        setPedidos(pedidosNormalizados);
-      } catch (err) {
-        console.error("Error cargando pedidos:", err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchPedidos();
-  }, [user]);
-
-  useEffect(() => {
-    if (!user) return;
-
-    const fetchData = async () => {
-      setLoading(true);
-
-      try {
-        if (user.role === "cliente") {
-          console.log("Obteniendo empresas...");
           const res = await axios.get<EmpresaConUsuario[]>(
             `${API_URL}/Api/GetEmpresasConUsuario`
           );
-
-          const data = res.data.filter((e) => e.empresa);
-          setEmpresas(data);
-
-          const nuevasImagenes: { [key: string]: string } = {};
-          await Promise.all(
-            data.map(async (empresa) => {
-              let imageUrl = fetchLogoFromLogoDev(empresa.empresa!.nombre);
-              if (!imageUrl) {
-                const query = empresa.empresa!.nombre.trim() || "restaurant";
-                imageUrl = await fetchImageFromPexels(query, API_KEY);
-              }
-              nuevasImagenes[empresa._id] = imageUrl || genericRestaurantImage;
-            })
-          );
-          setImagenes(nuevasImagenes);
+          setEmpresas(res.data || []);
         }
 
-        const esEmpresa = user.role === "empresa" || !!user.empresa;
-        if (esEmpresa) {
-          const empresaId = user.empresa?._id || user._id;
-          if (!empresaId) {
-            console.warn("No se pudo determinar ID de empresa");
-          } else {
-            const res = await axios.get<Pedido[]>(
-              `${API_URL}/Api/GetPedidosByEmpresa/${empresaId}`
-            );
-
-            const pedidosNormalizados: Pedido[] = res.data.map((p) => ({
-              _id: p._id,
-              clienteNombre: p?.id_cliente || "Cliente desconocido",
-              total: p?.total || 0,
-              estado: p?.estado || p.estado || "Desconocido",
-              fecha: p?.fecha || p?.createdAt || new Date().toISOString(),
-            }));
-
-            setPedidos(pedidosNormalizados);
-          }
-        }
       } catch (err) {
-        console.error("Error cargando datos del dashboard:", err);
+        console.error("Error cargando empresas:", err);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchData();
+    fetchEmpresas();
   }, [user]);
 
+  const empresasFiltradas = empresas.filter((e) => {
+    const nombreCoincide = e.empresa?.nombre
+      ?.toLowerCase()
+      .includes(searchTerm.toLowerCase());
+
+    const productosCoinciden = e.productos?.some((p) =>
+      p.nombre.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+
+    return nombreCoincide || productosCoinciden;
+  });
+
   return (
-    <div className="min-h-screen relative overflow-hidden bg-gradient-to-br from-orange-50 via-yellow-50 to-amber-50">
-      <div className="absolute top-0 left-0 w-72 h-72 bg-yellow-200 rounded-full mix-blend-multiply filter blur-xl opacity-30 animate-blob"></div>
-      <div className="absolute top-0 right-0 w-72 h-72 bg-orange-200 rounded-full mix-blend-multiply filter blur-xl opacity-30 animate-blob animation-delay-2000"></div>
-      <div className="absolute bottom-0 left-1/2 w-72 h-72 bg-amber-200 rounded-full mix-blend-multiply filter blur-xl opacity-30 animate-blob animation-delay-4000"></div>
-      <header className="bg-white shadow-sm flex items-center justify-between px-4 sm:px-6 py-3 sticky top-0 z-50 border-b border-gray-100">
+    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-yellow-50 to-amber-50">
+      <header className="bg-white shadow-sm flex items-center justify-between px-4 py-3 sticky top-0 z-50 border-b border-gray-100">
         <div className="flex items-center gap-3">
           <img src={logo} alt="Logo" className="w-12 h-12 object-contain" />
           <h1 className="text-xl text-yellow-400 font-semibold hidden sm:block">
@@ -311,20 +164,8 @@ const Dashboard: React.FC = () => {
         </div>
 
         <div className="flex items-center gap-3">
-          {user?.role === "empresa" && (
-            <button
-              className="bg-blue-600 text-white px-3 py-1.5 rounded-full font-semibold shadow-sm hover:bg-blue-700 transition-colors text-sm"
-              onClick={() => {
-                const id =
-                  user?.role === "empresa" ? user?.empresa?._id : user?._id;
-                navigate(`/productos/${id}`, { state: { tipo: user?.role } });
-              }}
-            >
-              Administrar Productos
-            </button>
-          )}
           <button
-            className="bg-green-600 text-white px-3 py-1.5 rounded-full font-semibold shadow-sm hover:bg-green-300 transition-colors text-sm"
+            className="bg-green-600 text-white px-3 py-1.5 rounded-full font-semibold shadow-sm hover:bg-green-300 transition-colors text-sm hover:cursor-pointer"
             onClick={() => {
               const id =
                 user?.role === "empresa"
@@ -335,105 +176,57 @@ const Dashboard: React.FC = () => {
           >
             Mis Pedidos
           </button>
-
-          <button
-            onClick={handleLogout}
-            className="bg-red-600 text-white px-3 py-1.5 rounded-full font-semibold shadow-sm hover:bg-red-700 transition-colors text-sm"
-          >
-            Cerrar sesión
-          </button>
+          {user?.name !== "Invitado" ? (
+            <button
+              onClick={handleLogout}
+              className="bg-red-600 text-white px-3 py-1.5 rounded-full font-semibold hover:cursor-pointer"
+            >
+              Cerrar sesión
+            </button>
+          ) : (
+            <button
+              onClick={handleLogin}
+              className="bg-blue-600 text-white px-3 py-1.5 rounded-full font-semibold hover:cursor-pointer hover:bg-blue-400 transition-colors text-sm"
+            >
+              Iniciar sesión
+            </button>
+          )}
         </div>
       </header>
+
       <section className="px-4 sm:px-6 py-6">
-        <h2 className="text-lg md:text-xl font-medium text-gray-800 mb-5">
+        <h2 className="text-lg md:text-xl font-medium text-gray-800 mb-4">
           Bienvenido,{" "}
           <span className="text-yellow-400 font-semibold">
             {`${user?.name || ""} ${user?.lastName || ""}`.trim() ||
               user?.email ||
-              "Usuario"}
+              "Invitado"}
           </span>
         </h2>
 
-        {loading && <p>Cargando pedidos...</p>}
-        {!loading && pedidos.length > 0 && (
-          <div className="flex flex-col gap-4">
-            {pedidos.map((pedido) => {
-              const estadoValido: EstadoPedido =
-                pedido.estado === "pendiente" || pedido.estado === "en progreso"
-                  ? pedido.estado
-                  : "pendiente";
+        <div className="mb-4">
+          <input
+            type="text"
+            placeholder="Buscar empresa o producto..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 transition"
+          />
+        </div>
 
-              return (
-                <PedidoDashboardBar
-                  key={pedido._id}
-                  pedido={{ ...pedido, estado: estadoValido }}
+        {loading && <p>Cargando empresas...</p>}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          {loading
+            ? Array.from({ length: 6 }).map((_, i) => <CardSkeleton key={i} />)
+            : empresasFiltradas.map((item) => (
+                <EmpresaCard
+                  key={item._id}
+                  empresa={item}
+                  imagen={imagenes[item._id] || genericRestaurantImage}
                 />
-              );
-            })}
-          </div>
-        )}
-
-        {pedidoMensaje && (
-          <div className="mx-4 sm:mx-6 mt-4 p-4 bg-green-50 border border-green-400 text-green-800 rounded-xl shadow-md flex justify-between items-center animate-fade-in">
-            <div>
-              <p className="font-semibold">{pedidoMensaje}</p>
-              {tiempoEstimado && horaListo && (
-                <p className="text-sm text-green-700">
-                  Tiempo estimado: {tiempoEstimado} min | Listo aprox:{" "}
-                  {horaListo}
-                </p>
-              )}
-            </div>
-          </div>
-        )}
-
-        {loading && <p>Cargando...</p>}
-
-        {user?.role === "cliente" ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 p-2">
-            {loading
-              ? Array.from({ length: 8 }).map((_, i) => (
-                  <CardSkeleton key={i} />
-                ))
-              : empresas.map((item) => (
-                  <EmpresaCard
-                    key={item._id}
-                    empresa={item}
-                    imagen={imagenes[item._id]}
-                  />
-                ))}
-          </div>
-        ) : (
-          <>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-2">
-              {pedidos.length === 0 && !loading && <p>No hay pedidos aún</p>}
-              {pedidos.map((pedido) => (
-                <PedidoCard key={pedido._id} pedido={pedido} />
               ))}
-            </div>
-            {user?.role === "empresa" && pedidos.length > 0 && (
-              <EstadisticasEmpresa pedidos={pedidos} />
-            )}
-          </>
-        )}
+        </div>
       </section>
-      <style>{`
-    @keyframes blob {
-      0% { transform: translate(0px, 0px) scale(1); }
-      33% { transform: translate(30px, -50px) scale(1.1); }
-      66% { transform: translate(-20px, 20px) scale(0.9); }
-      100% { transform: translate(0px, 0px) scale(1); }
-    }
-    .animate-blob {
-      animation: blob 7s infinite;
-    }
-    .animation-delay-2000 {
-      animation-delay: 2s;
-    }
-    .animation-delay-4000 {
-      animation-delay: 4s;
-    }
-  `}</style>
     </div>
   );
 };

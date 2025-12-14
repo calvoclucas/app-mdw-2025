@@ -5,12 +5,16 @@ import {
   getUsers,
   RegisterUser,
 } from "../controllers/user.controller";
+import { authOptional } from "../middlewares/authoptional";
+import { authRequired } from "../middlewares/authrequiered";
+import { rolesGuard } from "../middlewares/rolesguard";
 
 const router = express.Router();
 
-router.post("/CreateUser", createUser);
-router.get("/GetUsers", getUsers);
-router.put("/EditUser/:id_user", EditUser);
+router.post("/CreateUser", authOptional, authRequired, rolesGuard(["empresa"]), createUser);
+router.get("/GetUsers", authOptional, authRequired, getUsers);
+router.put("/EditUser/:id", authOptional, authRequired, EditUser);
 router.post("/RegisterUser", RegisterUser);
 
 export default router;
+ 

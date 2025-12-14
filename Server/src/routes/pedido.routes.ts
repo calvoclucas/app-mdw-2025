@@ -7,14 +7,17 @@ import {
   EditPedido,
   DeletePedido,
 } from "../controllers/pedido.controller";
+import { authOptional } from "../middlewares/authoptional";
+import { authRequired } from "../middlewares/authrequiered";
+import { rolesGuard } from "../middlewares/rolesguard";
 
 const router = Router();
 
-router.post("/CreatePedido", CreatePedido);
-router.get("/GetPedidosByCliente/:id_cliente", GetPedidosByCliente);
-router.get("/GetPedidosByEmpresa/:id_empresa", GetPedidosByEmpresa);
-router.get("/GetPedidoById/:id", GetPedidoById);
-router.put("/EditPedido/:id", EditPedido);
-router.delete("/DeletePedido/:id", DeletePedido);
+router.post("/CreatePedido",  authRequired, CreatePedido);
+router.get("/GetPedidosByCliente/:id_cliente",  authOptional, GetPedidosByCliente);
+router.get("/GetPedidosByEmpresa/:id_empresa",  authRequired,rolesGuard(["empresa"]), GetPedidosByEmpresa);
+router.get("/GetPedidoById/:id",  authRequired,  GetPedidoById);
+router.put("/EditPedido/:id",  authRequired,  EditPedido);
+router.delete("/DeletePedido/:id", authRequired,  DeletePedido);
 
 export default router;

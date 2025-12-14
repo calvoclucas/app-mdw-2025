@@ -19,7 +19,7 @@ export const CreatePedido = async (req: Request, res: Response) => {
       !id_empresa ||
       !id_metodo_pago ||
       !id_direccion ||
-      !total ||
+      total === undefined ||
       !estado
     ) {
       return res.status(400).json({ message: "Faltan campos obligatorios" });
@@ -46,8 +46,10 @@ export const CreatePedido = async (req: Request, res: Response) => {
 export const GetPedidosByCliente = async (req: Request, res: Response) => {
   try {
     const { id_cliente } = req.params;
+    if (!mongoose.Types.ObjectId.isValid(id_cliente)) {
+      return res.status(400).json({ error: "ID de cliente inválido" });
+    }
     const objectId = new mongoose.Types.ObjectId(id_cliente);
-
     const pedidos = await Pedido.find({ id_cliente: objectId })
       .populate("id_cliente")
       .populate("id_empresa")
@@ -64,6 +66,10 @@ export const GetPedidosByCliente = async (req: Request, res: Response) => {
 export const GetPedidosByEmpresa = async (req: Request, res: Response) => {
   try {
     const { id_empresa } = req.params;
+    if (!mongoose.Types.ObjectId.isValid(id_cliente)) {
+  return res.status(400).json({ error: "ID de cliente inválido" });
+}
+
     const objectId = new mongoose.Types.ObjectId(id_empresa);
 
     const pedidos = await Pedido.find({ id_empresa: objectId })

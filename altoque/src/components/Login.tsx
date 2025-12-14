@@ -1,51 +1,58 @@
 import React, { useState } from "react";
 import { useDispatch } from "react-redux";
-import { login } from "../features/auth/authSlice";
+import { login, AppUser } from "../features/auth/authSlice";
 import { signInWithEmailAndPassword } from "firebase/auth";
-import { auth } from "../firebase.js";
+import { auth } from "../firebase";
 import { useNavigate } from "react-router-dom";
-import type { AppDispatch } from "../app/store.js";
+import type { AppDispatch } from "../app/store";
 import logo from "../assets/logo_altoque.png";
 import axios from "axios";
+
 const API_URL = import.meta.env.VITE_BACKEND_URL;
+
 interface LoginResponse {
   message: string;
   user: {
-    uid?: string;
+    firebaseUid?: string;
+    email: string;
     name: string;
     lastName: string;
-    email: string;
     role?: "cliente" | "empresa";
     _id?: string;
-    [key: string]: any;
+    empresa?: {
+      _id: string;
+      nombre: string;
+    };
+    cliente?: {
+      _id: string;
+      nombre: string;
+      puntos: number;
+    };
   };
   token?: string;
-}
-
-export interface AppUser {
-  firebaseUid?: string;
-  _id?: string;
-  email: string;
-  name: string;
-  lastName: string;
-  role?: "cliente" | "empresa";
-  empresa?: {
-    _id: string;
-    nombre: string;
-  };
-  cliente?: {
-    _id: string;
-    nombre: string;
-    puntos: number;
-  };
 }
 
 const Login: React.FC = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+
   const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
+
+  const handleGuestLogin = () => {
+    const guestUser: AppUser = {
+      _id: "guest",
+      firebaseUid: "guest",
+      email: "invitado@altoque.app",
+      name: "Invitado",
+      lastName: "",
+      role: "cliente",
+    };
+
+    dispatch(login(guestUser));
+    navigate("/dashboard");
+  };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -57,27 +64,31 @@ const Login: React.FC = () => {
         email,
         password
       );
+
       const firebaseUser = userCredential.user;
       const token = await firebaseUser.getIdToken();
-      const { data } = await axios.post<LoginResponse>(`${API_URL}/api/login`, {
-        token,
-      });
+
+      const { data } = await axios.post<LoginResponse>(
+        `${API_URL}/api/login`,
+        { token }
+      );
 
       const appUser: AppUser = {
         firebaseUid: data.user.firebaseUid || firebaseUser.uid,
         email: data.user.email,
         name: data.user.name,
         lastName: data.user.lastName,
-        role: data.user.role,
+        role: data.user.role as "cliente" | "empresa",
         _id: data.user._id,
         empresa: data.user.empresa,
         cliente: data.user.cliente,
       };
 
-      dispatch(login(appUser as any));
+      dispatch(login(appUser));
       navigate("/dashboard");
     } catch (err: any) {
       console.error(err);
+
       if (err?.response?.data?.error) {
         setError(err.response.data.error);
       } else {
@@ -93,7 +104,11 @@ const Login: React.FC = () => {
         className="bg-white p-10 rounded-xl shadow-2xl w-full max-w-sm transform transition duration-500 hover:scale-105"
       >
         <div className="flex justify-center mb-4">
-          <img src={logo} alt="Logo" className="w-40 h-auto object-contain" />
+          <img
+            src={logo}
+            alt="Logo"
+            className="w-40 h-auto object-contain"
+          />
         </div>
 
         <h2 className="text-3xl font-bold mb-6 text-center text-gray-800">
@@ -101,7 +116,9 @@ const Login: React.FC = () => {
         </h2>
 
         {error && (
-          <p className="text-red-500 mb-4 text-center font-medium">{error}</p>
+          <p className="text-red-500 mb-4 text-center font-medium">
+            {error}
+          </p>
         )}
 
         <input
@@ -124,7 +141,7 @@ const Login: React.FC = () => {
 
         <button
           type="submit"
-          className="w-full text-white p-3 rounded-lg bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 transition font-semibold"
+          className="w-full text-white p-3 rounded-lg bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 transition font-semibold hover:cursor-pointer "
         >
           Iniciar Sesión
         </button>
@@ -133,11 +150,19 @@ const Login: React.FC = () => {
           ¿No tenés cuenta?{" "}
           <a
             href="/register"
-            className="text-purple-600 font-semibold hover:underline"
+            className="text-purple-600 font-semibold hover:underline hover:text-purple-500"
           >
             Registrate
           </a>
         </p>
+
+        <button
+          type="button"
+          onClick={handleGuestLogin}
+          className="text-purple-600 font-semibold underline mt-4 w-full text-center text-sm hover:cursor-pointer hover:text-purple-500"
+        >
+          Ingresar como invitado
+        </button>
       </form>
     </div>
   );

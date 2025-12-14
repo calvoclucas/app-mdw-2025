@@ -107,7 +107,7 @@ const Register: React.FC = () => {
         <select
           value={role}
           onChange={(e) => setRole(e.target.value)}
-          className="w-full p-3 mb-6 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 transition"
+          className="w-full p-3 mb-6 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 transition hover:cursor-pointer"
         >
           <option value="cliente">Cliente</option>
           <option value="empresa">Empresa</option>
@@ -115,10 +115,14 @@ const Register: React.FC = () => {
 
         <button
           type="submit"
-          className="w-full text-white p-3 rounded-lg bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 transition font-semibold"
+          className="w-full text-white p-3 rounded-lg bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 transition font-semibold hover:cursor-pointer "
         >
           Registrarse
         </button>
+        <button 
+        type="button"
+            onClick={() => navigate("/login")}
+        className="text-purple-600 font-semibold mt-4 w-full text-center hover:text-purple-500 text-sm hover:cursor-pointer hover:underline">Volver</button>
       </form>
     </div>
   );

@@ -6,13 +6,16 @@ import {
   EditMetodoPago,
   DeleteMetodoPago,
 } from "../controllers/metodopago.controller";
+import { authOptional } from "../middlewares/authoptional";
+import { authRequired } from "../middlewares/authrequiered";
+import { rolesGuard } from "../middlewares/rolesguard";
 
 const router = express.Router();
 
-router.post("/CreateMetodoPago", CreateMetodoPago);
-router.get("/GetMetodosPago", GetMetodosPago);
-router.get("/GetMetodoPagoById/:id_metodo_pago", GetMetodoPagoById);
-router.put("/EditMetodoPago/:id_metodo_pago", EditMetodoPago);
-router.delete("/DeleteMetodoPago/:id_metodo_pago", DeleteMetodoPago);
+router.post("/CreateMetodoPago",  authOptional, authRequired,rolesGuard(["empresa"]) ,CreateMetodoPago);
+router.get("/GetMetodosPago", authOptional,GetMetodosPago);
+router.get("/GetMetodoPagoById/:id", authOptional,GetMetodoPagoById);
+router.put("/EditMetodoPago/:id_metodo_pago", authOptional, authRequired, rolesGuard(["empresa"]), EditMetodoPago);
+router.delete("/DeleteMetodoPago/:id_metodo_pago", authOptional, authRequired, rolesGuard(["empresa"]), DeleteMetodoPago);
 
 export default router;

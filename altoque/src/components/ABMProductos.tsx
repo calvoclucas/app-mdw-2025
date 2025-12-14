@@ -6,7 +6,7 @@ import { useNavigate } from "react-router-dom";
 import type { RootState } from "../app/store";
 import { AppUser } from "../features/auth/authSlice";
 
-const API_URL = import.meta.env.VITE_API_URL;
+const API_URL = import.meta.env.VITE_BACKEND_URL || import.meta.env.VITE_LOCAL_HOST;
 
 interface Producto {
   _id?: string;

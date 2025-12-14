@@ -7,14 +7,16 @@ import {
   DeleteProducto,
   GetProductosByEmpresa,
 } from "../controllers/producto.controller";
-
+import { authOptional } from "../middlewares/authoptional";
+import { authRequired } from "../middlewares/authrequiered";
+import { rolesGuard } from "../middlewares/rolesguard";
 const router = express.Router();
 
-router.get("/GetProductos", GetProductos);
-router.get("/GetProductosByEmpresa/:id_empresa", GetProductosByEmpresa);
-router.get("/GetProducto/:id", GetProductoById);
-router.post("/CreateProducto", CreateProducto);
-router.put("/EditProducto/:id", EditProducto);
-router.delete("/DeleteProducto/:id", DeleteProducto);
+router.get("/GetProductos", authOptional, GetProductos);
+router.get("/GetProductosByEmpresa/:id_empresa", authOptional, GetProductosByEmpresa);
+router.get("/GetProducto/:id", authOptional, GetProductoById);
+router.post("/CreateProducto", authOptional, authRequired, rolesGuard(["empresa"]), CreateProducto);
+router.put("/EditProducto/:id", authOptional,EditProducto);
+router.delete("/DeleteProducto/:id", authOptional, authRequired, rolesGuard(["empresa"]), DeleteProducto);
 
 export default router;

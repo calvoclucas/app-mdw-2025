@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import Empresa from "../models/Empresa";
 import User from "../models/User";
 import Direccion from "../models/Direccion";
+import Producto from "../models/Producto";
 
 export const GetEmpresas = async (req: Request, res: Response) => {
   try {
@@ -88,5 +89,32 @@ export const GetEmpresasConUsuario = async (req: Request, res: Response) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Error al obtener empresas con usuario" });
+  }
+};
+
+export const buscarEmpresasConProductos = async (req: Request, res: Response) => {
+  try {
+    const { q } = req.query;
+    if (!q || typeof q !== "string") {
+      return res.status(400).json({ error: "Parámetro de búsqueda requerido" });
+    }
+
+    const productos = await Producto.find({
+      nombre: { $regex: q, $options: "i" },
+    }).populate("id_empresa");
+
+    const empresaIds = productos.map((p) => p.id_empresa);
+
+    const empresas = await Empresa.find({
+      $or: [
+        { nombre: { $regex: q, $options: "i" } },
+        { _id: { $in: empresaIds } },
+      ],
+    });
+
+    res.json(empresas);
+  } catch (error) {
+    console.error("Error buscando empresas:", error);
+    res.status(500).json({ error: "Error buscando empresas" });
   }
 };

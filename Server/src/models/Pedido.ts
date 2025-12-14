@@ -3,7 +3,7 @@ import Historial from "./Historial";
 
 const pedidoSchema = new Schema(
   {
-    id_cliente: { type: Types.ObjectId, ref: "Cliente", required: true },
+    id_cliente: { type: Types.ObjectId, ref: "User", required: true },
     id_empresa: { type: Types.ObjectId, ref: "Empresa", required: true },
     id_metodo_pago: { type: Types.ObjectId, ref: "MetodoPago", required: true },
     id_direccion: { type: Types.ObjectId, ref: "Direccion", required: true },
