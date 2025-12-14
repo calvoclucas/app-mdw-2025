@@ -10,6 +10,7 @@ import Productos from "./components/ABMProductos";
 import SobreNosotros from "./components/SobreNosotros";
 import Contacto from "./components/contacto";
 import FAQ from "./components/FAQ";
+import MiPerfil from "./components/MiPerfil";
 
 const App: React.FC = () => {
   return (
@@ -26,6 +27,7 @@ const App: React.FC = () => {
         <Route path="/about" element={<SobreNosotros />} />
         <Route path="/contact" element={<Contacto />} />
         <Route path="/faq" element={<FAQ />} />
+        <Route path="/profile" element={<MiPerfil/>}/>
       </Routes>
     </BrowserRouter>
   );
