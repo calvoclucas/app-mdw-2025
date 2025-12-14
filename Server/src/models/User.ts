@@ -1,4 +1,5 @@
-import { Schema, model } from "mongoose";
+import { Schema, model, InferSchemaType } from "mongoose";
+import Joi from "joi";
 
 const userSchema = new Schema(
   {
@@ -19,4 +20,29 @@ const userSchema = new Schema(
   { timestamps: true }
 );
 
-export default model("User", userSchema);
+export type UserType = InferSchemaType<typeof userSchema>;
+const UserModel = model<UserType>("User", userSchema);
+
+export const createUserSchema = Joi.object({
+  name: Joi.string().required(),
+  lastName: Joi.string().required(),
+  email: Joi.string().email().required(),
+  isActive: Joi.boolean().optional(),
+  role: Joi.string().valid("cliente", "empresa").required(),
+  cliente: Joi.string().optional(),
+  empresa: Joi.string().optional(),
+  firebaseUid: Joi.string().optional(),
+});
+
+export const updateUserSchema = Joi.object({
+  name: Joi.string().optional(),
+  lastName: Joi.string().optional(),
+  email: Joi.string().email().optional(),
+  isActive: Joi.boolean().optional(),
+  role: Joi.string().valid("cliente", "empresa").optional(),
+  cliente: Joi.string().optional(),
+  empresa: Joi.string().optional(),
+  firebaseUid: Joi.string().optional(),
+});
+
+export default UserModel;

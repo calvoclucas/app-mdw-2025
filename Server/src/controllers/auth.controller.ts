@@ -3,11 +3,21 @@ import admin from "../config/firebase";
 import User from "../models/User";
 import Empresa from "../models/Empresa";
 import Cliente from "../models/Cliente";
+import Joi from "joi";
+
+const loginSchema = Joi.object({
+  token: Joi.string().required().messages({
+    "string.empty": "El token es obligatorio",
+    "any.required": "El token es obligatorio",
+  }),
+});
 
 export const login = async (req: Request, res: Response) => {
   try {
-    const { token } = req.body;
-    if (!token) return res.status(400).json({ error: "Token requerido" });
+    const { error, value } = loginSchema.validate(req.body);
+    if (error) return res.status(400).json({ error: error.details[0].message });
+
+    const { token } = value;
 
     const decodedToken = await admin.auth().verifyIdToken(token);
     const { uid, email } = decodedToken;

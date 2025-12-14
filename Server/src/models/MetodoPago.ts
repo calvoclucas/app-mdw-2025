@@ -1,4 +1,5 @@
 import { Schema, model, InferSchemaType } from "mongoose";
+import Joi from "joi";
 
 const metodoPagoSchema = new Schema(
   {
@@ -8,4 +9,14 @@ const metodoPagoSchema = new Schema(
 );
 
 export type MetodoPagoType = InferSchemaType<typeof metodoPagoSchema>;
-export default model<MetodoPagoType>("MetodoPago", metodoPagoSchema);
+const MetodoPagoModel = model<MetodoPagoType>("MetodoPago", metodoPagoSchema);
+
+export const createMetodoPagoSchema = Joi.object({
+  tipo: Joi.string().required(),
+});
+
+export const updateMetodoPagoSchema = Joi.object({
+  tipo: Joi.string().optional(),
+});
+
+export default MetodoPagoModel;
