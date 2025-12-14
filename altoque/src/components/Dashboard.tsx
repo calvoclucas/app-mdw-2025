@@ -7,6 +7,12 @@ import axios from "axios";
 import { EmpresaConUsuario } from "../types";
 import logo from "../assets/logo_altoque.png";
 
+// Importa tus componentes modulares
+import Footer from "../components/Footer";
+import Contact from "../components/Contact";
+import FAQ from "../components/FAQ";
+import About from "../components/About";
+
 const API_URL = import.meta.env.VITE_BACKEND_URL;
 
 const genericRestaurantImage =
@@ -95,6 +101,7 @@ const Dashboard: React.FC = () => {
   const [pedidoMensaje, setPedidoMensaje] = useState(state?.mensaje || "");
   const [searchTerm, setSearchTerm] = useState("");
   const [showGuestToast, setShowGuestToast] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
 
   const user = useSelector((state: RootState) => state.auth.user);
   const dispatch = useDispatch<AppDispatch>();
@@ -135,7 +142,6 @@ const Dashboard: React.FC = () => {
           );
           setEmpresas(res.data || []);
         }
-
       } catch (err) {
         console.error("Error cargando empresas:", err);
       } finally {
@@ -159,7 +165,7 @@ const Dashboard: React.FC = () => {
   });
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-yellow-50 to-amber-50">
+    <div className="min-h-screen flex flex-col justify-between bg-gradient-to-br from-orange-50 via-yellow-50 to-amber-50">
       <header className="bg-white shadow-sm flex items-center justify-between px-4 py-3 sticky top-0 z-50 border-b border-gray-100">
         <div className="flex items-center gap-3">
           <img src={logo} alt="Logo" className="w-12 h-12 object-contain" />
@@ -168,7 +174,7 @@ const Dashboard: React.FC = () => {
           </h1>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 relative">
           <button
             className="bg-green-600 text-white px-3 py-1.5 rounded-full font-semibold shadow-sm hover:bg-green-300 transition-colors text-sm hover:cursor-pointer"
             onClick={() => {
@@ -182,25 +188,44 @@ const Dashboard: React.FC = () => {
             Mis Pedidos
           </button>
 
-          {user?.name !== "Invitado" ? (
+          <div className="relative">
             <button
-              onClick={handleLogout}
-              className="bg-red-600 text-white px-3 py-1.5 rounded-full font-semibold hover:cursor-pointer"
+              onClick={() => setProfileOpen(!profileOpen)}
+              className="flex items-center gap-2 bg-yellow-400 text-white px-3 py-1.5 rounded-full font-semibold hover:bg-yellow-500 transition"
             >
-              Cerrar sesión
+              {user?.name || "Invitado"}
             </button>
-          ) : (
-            <button
-              onClick={handleLogin}
-              className="bg-blue-600 text-white px-3 py-1.5 rounded-full font-semibold hover:cursor-pointer hover:bg-blue-400 transition-colors text-sm"
-            >
-              Iniciar sesión
-            </button>
-          )}
+
+            {profileOpen && (
+              <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 overflow-hidden z-50">
+                <button
+                  className="block w-full text-left px-4 py-2 hover:bg-yellow-50 text-gray-700"
+                  onClick={() => navigate("/profile")}
+                >
+                  Mi perfil
+                </button>
+                {user?.name !== "Invitado" ? (
+                  <button
+                    className="block w-full text-left px-4 py-2 hover:bg-yellow-50 text-gray-700"
+                    onClick={handleLogout}
+                  >
+                    Cerrar sesión
+                  </button>
+                ) : (
+                  <button
+                    className="block w-full text-left px-4 py-2 hover:bg-yellow-50 text-gray-700"
+                    onClick={handleLogin}
+                  >
+                    Iniciar sesión
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
         </div>
       </header>
 
-      <section className="px-4 sm:px-6 py-6">
+      <main className="px-4 sm:px-6 py-6 flex-1">
         <h2 className="text-lg md:text-xl font-medium text-gray-800 mb-4">
           Bienvenido,{" "}
           <span className="text-yellow-400 font-semibold">
@@ -232,7 +257,7 @@ const Dashboard: React.FC = () => {
                 />
               ))}
         </div>
-      </section>
+      </main>
 
       {showGuestToast && (
         <div className="fixed top-24 right-6 bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 rounded shadow-lg flex items-start gap-3 w-80 animate-slide-in z-50">
@@ -243,17 +268,24 @@ const Dashboard: React.FC = () => {
             viewBox="0 0 24 24"
             xmlns="http://www.w3.org/2000/svg"
           >
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M12 20h.01M12 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M13 16h-1v-4h-1m1-4h.01M12 20h.01M12 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+            />
           </svg>
           <div className="flex-1">
             <p className="font-semibold">Estás navegando como invitado</p>
             <p className="text-sm text-gray-700">
-              Para ver tus pedidos y obtener una mejor experiencia, inicia sesión en tu cuenta.
+              Para ver tus pedidos y obtener una mejor experiencia, inicia sesión
+              en tu cuenta.
             </p>
           </div>
         </div>
       )}
-      
+
+      <Footer />
     </div>
   );
 };
