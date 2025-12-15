@@ -4,11 +4,35 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { logout } from "../features/auth/authSlice.js";
 import type { RootState, AppDispatch } from "../app/store.js";
 import axios from "axios";
-import { EmpresaConUsuario } from "../types";
 import { FaUserCircle } from "react-icons/fa";
 import logo from "../assets/logo_altoque.png";
-
 import Footer from "../components/Footer";
+
+interface Empresa {
+  _id: string;
+  nombre: string;
+  email: string;
+  telefono?: string;
+  horario_apertura?: string;
+  horario_cierre?: string;
+  costo_envio?: number;
+}
+
+interface EmpresaConUsuarioBackend {
+  _id: string;
+  email: string;
+  nombreUsuario: string;
+  empresa: {
+    _id: string;
+    nombre: string;
+    email: string;
+    telefono?: string;
+    horario_apertura?: string;
+    horario_cierre?: string;
+    costo_envio?: number;
+  };
+  direccion?: any;
+}
 
 interface PexelsResponse {
   photos: {
@@ -21,6 +45,7 @@ interface PexelsResponse {
 }
 
 const API_URL = import.meta.env.VITE_BACKEND_URL;
+
 const genericRestaurantImage =
   "https://images.pexels.com/photos/262978/pexels-photo-262978.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2";
 
@@ -36,7 +61,7 @@ const CardSkeleton: React.FC = () => (
 );
 
 const EmpresaCard: React.FC<{
-  empresa: EmpresaConUsuario;
+  empresa: Empresa;
   imagen: string;
   onFavorite?: (id: string) => void;
   favorito?: boolean;
@@ -44,31 +69,29 @@ const EmpresaCard: React.FC<{
   const navigate = useNavigate();
 
   const abiertoAhora = (() => {
-    if (
-      !empresa.empresa ||
-      !empresa.empresa.horario_apertura ||
-      !empresa.empresa.horario_cierre
-    )
-      return false;
+    if (!empresa.horario_apertura || !empresa.horario_cierre) return false;
     const horaActual = new Date().getHours();
-    const apertura = parseInt(empresa.empresa.horario_apertura.split(":")[0]);
-    const cierre = parseInt(empresa.empresa.horario_cierre.split(":")[0]);
+    const apertura = parseInt(empresa.horario_apertura.split(":")[0]);
+    const cierre = parseInt(empresa.horario_cierre.split(":")[0]);
     return apertura > cierre
       ? horaActual >= apertura || horaActual < cierre
       : horaActual >= apertura && horaActual < cierre;
   })();
 
   const handleClick = () => {
-    if (!empresa.empresa?._id) return;
-    navigate(`/empresa/${empresa.empresa._id}`);
+    if (!empresa._id) return;
+    navigate(`/empresa/${empresa._id}`);
   };
 
   return (
-    <div className="group bg-white rounded-xl shadow-sm overflow-hidden transform transition duration-300 hover:scale-[1.03] hover:shadow-md border border-gray-100 m-4 cursor-pointer relative">
+    <div
+      className="group bg-white rounded-xl shadow-sm overflow-hidden transform transition duration-300 hover:scale-[1.03] hover:shadow-md border border-gray-100 m-4 cursor-pointer relative"
+      onClick={handleClick}
+    >
       <div className="relative">
         <img
           src={imagen || genericRestaurantImage}
-          alt={empresa.empresa?.nombre || "Empresa"}
+          alt={empresa.nombre || "Empresa"}
           className="w-full h-36 object-cover transition duration-300 hover:opacity-90"
           onError={(e) => {
             e.currentTarget.src = genericRestaurantImage;
@@ -79,11 +102,11 @@ const EmpresaCard: React.FC<{
           style={{ backgroundColor: abiertoAhora ? "#16a34a" : "#dc2626" }}
         >
           {abiertoAhora
-            ? `ABIERTO | Cierra ${empresa.empresa?.horario_cierre}`
-            : `CERRADO | Abre ${empresa.empresa?.horario_apertura}`}
+            ? `ABIERTO | Cierra ${empresa.horario_cierre}`
+            : `CERRADO | Abre ${empresa.horario_apertura}`}
         </div>
         <div className="absolute bottom-2 right-2 bg-white text-gray-800 px-2 py-1 text-xs font-semibold rounded-full shadow">
-          Envío: ${empresa.empresa?.costo_envio?.toFixed(2) || "0.00"}
+          Envío: ${empresa.costo_envio?.toFixed(2) || "0.00"}
         </div>
         {onFavorite && (
           <button
@@ -101,11 +124,11 @@ const EmpresaCard: React.FC<{
       </div>
       <div className="p-4 flex flex-col gap-2 text-sm">
         <h3 className="text-base font-semibold text-gray-900 truncate group-hover:text-yellow-500 transition-colors">
-          {empresa.empresa?.nombre}
+          {empresa.nombre}
         </h3>
-        <p className="text-gray-600">{empresa.empresa?.email}</p>
-        {empresa.empresa?.telefono && (
-          <p className="text-gray-600">{empresa.empresa.telefono}</p>
+        <p className="text-gray-600">{empresa.email}</p>
+        {empresa.telefono && (
+          <p className="text-gray-600">{empresa.telefono}</p>
         )}
       </div>
     </div>
@@ -130,50 +153,58 @@ const Dashboard: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
 
-  const [empresas, setEmpresas] = useState<EmpresaConUsuario[]>([]);
+  const [empresas, setEmpresas] = useState<Empresa[]>([]);
   const [imagenes, setImagenes] = useState<{ [key: string]: string }>({});
   const [loading, setLoading] = useState(true);
   const isGuest = user?._id === "guest";
 
   useEffect(() => {
-    if (!user) {
-      navigate("/login");
-    } else if (user.name === "Invitado") {
+    if (!user) navigate("/login");
+    else if (user.name === "Invitado") {
       setShowGuestToast(true);
       const timer = setTimeout(() => setShowGuestToast(false), 5000);
       return () => clearTimeout(timer);
     }
-  }, [user, navigate]);
+  }, [user]);
 
   const handleLogout = () => {
     dispatch(logout());
     navigate("/");
   };
-  const handleLogin = () => {
-    navigate("/login");
-  };
-
+  const handleLogin = () => navigate("/login");
   useEffect(() => {
-    if (!user) return;
+    if (user === undefined) return;
+    if (!user) {
+      setLoading(false);
+      navigate("/login");
+      return;
+    }
 
     const fetchEmpresas = async () => {
       setLoading(true);
       try {
         if (user.role === "empresa" && token && user._id !== "guest") {
-          const res = await axios.get<EmpresaConUsuario[]>(
+          const res = await axios.get<EmpresaConUsuarioBackend[]>(
             `${API_URL}/Api/GetEmpresasConUsuario`,
-            {
-              headers: {
-                Authorization: `Bearer ${token}`,
-              },
-            }
+            { headers: { Authorization: `Bearer ${token}` } }
           );
-          setEmpresas(res.data || []);
+
+          const empresasNormalizadas: Empresa[] = res.data
+            .filter((u) => u.empresa)
+            .map((u) => ({
+              _id: u.empresa!._id,
+              nombre: u.empresa!.nombre,
+              email: u.empresa!.email,
+              telefono: u.empresa!.telefono,
+              horario_apertura: u.empresa!.horario_apertura,
+              horario_cierre: u.empresa!.horario_cierre,
+              costo_envio: u.empresa!.costo_envio,
+            }));
+          setEmpresas(empresasNormalizadas);
         } else {
-          const res = await axios.get<EmpresaConUsuario[]>(
-            `${API_URL}/Api/GetEmpresas`
-          );
+          const res = await axios.get<Empresa[]>(`${API_URL}/Api/GetEmpresas`);
           setEmpresas(res.data || []);
+          console.log("Datos invitado:", res.data);
         }
       } catch (err) {
         console.error("Error cargando empresas:", err);
@@ -183,7 +214,7 @@ const Dashboard: React.FC = () => {
     };
 
     fetchEmpresas();
-  }, [user, token]);
+  }, [user, token, navigate]);
 
   useEffect(() => {
     if (empresas.length === 0) return;
@@ -191,29 +222,26 @@ const Dashboard: React.FC = () => {
     const loadImagesFromPexels = async () => {
       try {
         const nuevasImagenes: { [key: string]: string } = {};
-
         await Promise.all(
           empresas.map(async (empresa) => {
-            const query = empresa.empresa?.nombre || "restaurant";
-
+            const query = empresa.nombre || "restaurant";
             const res = await axios.get<PexelsResponse>(
               "https://api.pexels.com/v1/search",
               {
-                headers: {
-                  Authorization: import.meta.env.VITE_PEXELS_API_KEY,
-                },
-                params: {
-                  query,
-                  per_page: 1,
-                },
+                headers: { Authorization: import.meta.env.VITE_PEXELS_API_KEY },
+                params: { query, per_page: 5 },
               }
             );
 
-            nuevasImagenes[empresa._id] =
-              res.data.photos?.[0]?.src?.large || genericRestaurantImage;
+            const fotos = res.data.photos;
+            if (fotos && fotos.length > 0) {
+              const index = Math.floor(Math.random() * fotos.length);
+              nuevasImagenes[empresa._id] = fotos[index].src.large;
+            } else {
+              nuevasImagenes[empresa._id] = genericRestaurantImage;
+            }
           })
         );
-
         setImagenes(nuevasImagenes);
       } catch (error) {
         console.error("Error cargando imágenes de Pexels", error);
@@ -223,45 +251,29 @@ const Dashboard: React.FC = () => {
     loadImagesFromPexels();
   }, [empresas]);
 
-  const toggleFavorito = (id: string) => {
+  const toggleFavorito = (id: string) =>
     setFavoritos((prev) =>
       prev.includes(id) ? prev.filter((f) => f !== id) : [...prev, id]
     );
-  };
 
   const empresasFiltradas = empresas.filter((e) => {
-    const nombreCoincide = e.empresa?.nombre
-      ?.toLowerCase()
-      .includes(searchTerm.toLowerCase());
-    const productosCoinciden = e.productos?.some((p) =>
-      p.nombre.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    const searchLower = searchTerm.toLowerCase().trim();
+    const matchesSearch =
+      !searchLower || e.nombre.toLowerCase().includes(searchLower) || false;
 
-    let categoriaCoincide = filterCategory
-      ? e.empresa?.categoria === filterCategory
-      : true;
-
-    let openCoincide = true;
+    let matchesOpen = true;
     if (filterOpen) {
       const horaActual = new Date().getHours();
-      const apertura = parseInt(
-        e.empresa?.horario_apertura?.split(":")[0] || "0"
-      );
-      const cierre = parseInt(e.empresa?.horario_cierre?.split(":")[0] || "24");
+      const apertura = parseInt(e.horario_apertura?.split(":")[0] || "0");
+      const cierre = parseInt(e.horario_cierre?.split(":")[0] || "24");
       const abierto =
         apertura > cierre
           ? horaActual >= apertura || horaActual < cierre
           : horaActual >= apertura && horaActual < cierre;
-      openCoincide =
-        (filterOpen === "open" && abierto) ||
-        (filterOpen === "closed" && !abierto);
+      matchesOpen = filterOpen === "open" ? abierto : !abierto;
     }
 
-    return (
-      (nombreCoincide || productosCoinciden) &&
-      categoriaCoincide &&
-      openCoincide
-    );
+    return matchesSearch && matchesOpen;
   });
 
   const empresasFavoritas = empresas.filter((e) => favoritos.includes(e._id));
@@ -275,7 +287,6 @@ const Dashboard: React.FC = () => {
             Altoque
           </h1>
         </div>
-
         <div className="flex items-center gap-3 relative">
           <button
             className="bg-green-600 text-white px-3 py-1.5 rounded-full font-semibold shadow-sm hover:bg-green-300 transition-colors text-sm hover:cursor-pointer"
@@ -289,7 +300,6 @@ const Dashboard: React.FC = () => {
           >
             Mis Pedidos
           </button>
-
           <div className="relative">
             <button
               onClick={() => setProfileOpen(!profileOpen)}
@@ -297,7 +307,6 @@ const Dashboard: React.FC = () => {
             >
               <FaUserCircle size={20} />
             </button>
-
             {profileOpen && (
               <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 overflow-hidden z-50">
                 <button
@@ -331,45 +340,20 @@ const Dashboard: React.FC = () => {
         <h2 className="text-lg md:text-xl font-medium text-gray-800 mb-4">
           Bienvenido,{" "}
           <span className="text-yellow-400 font-semibold">
-            {`${user?.name || ""} ${user?.lastName || ""}`.trim() ||
-              user?.email ||
-              "Invitado"}
+            {user?.name || user?.email || "Invitado"}
           </span>
         </h2>
 
-        {/* Buscador + filtros */}
         <div className="mb-6 flex flex-col md:flex-row md:items-center md:gap-4">
           <input
             type="text"
-            placeholder="Buscar empresa o producto..."
+            placeholder="Buscar empresa..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="w-full md:w-1/2 p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 transition"
           />
-
-          <div className="flex flex-col md:flex-row gap-2 mt-2 md:mt-0">
-            <select
-              className="p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400 transition"
-              onChange={(e) => setFilterCategory(e.target.value)}
-            >
-              <option value="">Todas las categorías</option>
-              <option value="pizzeria">Pizzerías</option>
-              <option value="hamburgueseria">Hamburgueserías</option>
-              <option value="heladeria">Heladerías</option>
-            </select>
-
-            <select
-              className="p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400 transition"
-              onChange={(e) => setFilterOpen(e.target.value)}
-            >
-              <option value="">Todos</option>
-              <option value="open">Abierto ahora</option>
-              <option value="closed">Cerrado</option>
-            </select>
-          </div>
         </div>
 
-        {/* Favoritos */}
         {empresasFavoritas.length > 0 && (
           <div className="mb-6">
             <h3 className="text-lg font-semibold text-gray-800 mb-2">
@@ -389,8 +373,21 @@ const Dashboard: React.FC = () => {
           </div>
         )}
 
-        {/* Lista principal */}
-        {loading && <p>Cargando empresas...</p>}
+        {loading && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            <CardSkeleton />
+            <CardSkeleton />
+            <CardSkeleton />
+            <CardSkeleton />
+          </div>
+        )}
+
+        {!loading && empresasFiltradas.length === 0 && (
+          <p className="text-gray-500 text-center py-10">
+            No se encontraron empresas que coincidan con tu búsqueda.
+          </p>
+        )}
+
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {!loading &&
             empresasFiltradas.map((item) => (
@@ -412,7 +409,6 @@ const Dashboard: React.FC = () => {
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
-            xmlns="http://www.w3.org/2000/svg"
           >
             <path
               strokeLinecap="round"
