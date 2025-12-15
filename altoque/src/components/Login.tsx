@@ -50,7 +50,13 @@ const Login: React.FC = () => {
       role: "cliente",
     };
 
-    dispatch(login(guestUser));
+    dispatch(
+      login({
+        user: guestUser,
+        token: "guest-token",
+      })
+    );
+
     navigate("/dashboard");
   };
 
@@ -87,7 +93,13 @@ const Login: React.FC = () => {
         cliente: data.user.cliente,
       };
 
-      dispatch(login(appUser));
+      dispatch(
+        login({
+          user: appUser,
+          token,
+        })
+      );
+
       navigate("/dashboard");
     } catch (err: any) {
       console.error(err);

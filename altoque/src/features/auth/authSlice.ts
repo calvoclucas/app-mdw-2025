@@ -25,25 +25,35 @@ export interface AppUser {
 
 interface AuthState {
   user: AppUser | null;
+  token: string | null;
 }
 
 const storedUser = localStorage.getItem("user");
+const storedToken = localStorage.getItem("token");
 const initialState: AuthState = {
   user: storedUser ? JSON.parse(storedUser) : null,
+  token: storedToken,
 };
 
 export const authSlice = createSlice({
   name: "auth",
   initialState,
   reducers: {
-    login: (state, action: PayloadAction<AppUser>) => {
-      state.user = action.payload;
-      localStorage.setItem("user", JSON.stringify(action.payload));
+    login: (state, action: PayloadAction<{ user: AppUser; token: string }>) => {
+      state.user = action.payload.user;
+      state.token = action.payload.token;
+
+      localStorage.setItem("user", JSON.stringify(action.payload.user));
+      localStorage.setItem("token", action.payload.token);
     },
+
     logout: (state) => {
       state.user = null;
+      state.token = null;
       localStorage.removeItem("user");
+      localStorage.removeItem("token");
     },
+
     setUser: (state, action: PayloadAction<AppUser>) => {
       state.user = action.payload;
     },

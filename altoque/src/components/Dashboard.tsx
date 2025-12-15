@@ -125,12 +125,15 @@ const Dashboard: React.FC = () => {
   const [profileOpen, setProfileOpen] = useState(false);
 
   const user = useSelector((state: RootState) => state.auth.user);
+  const token = useSelector((state: RootState) => state.auth.token);
+
   const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
 
   const [empresas, setEmpresas] = useState<EmpresaConUsuario[]>([]);
   const [imagenes, setImagenes] = useState<{ [key: string]: string }>({});
   const [loading, setLoading] = useState(true);
+  const isGuest = user?._id === "guest";
 
   useEffect(() => {
     if (!user) {
@@ -152,12 +155,23 @@ const Dashboard: React.FC = () => {
 
   useEffect(() => {
     if (!user) return;
+
     const fetchEmpresas = async () => {
       setLoading(true);
       try {
-        if (user.role === "cliente") {
+        if (user.role === "empresa" && token && user._id !== "guest") {
           const res = await axios.get<EmpresaConUsuario[]>(
-            `${API_URL}/Api/GetEmpresasConUsuario`
+            `${API_URL}/Api/GetEmpresasConUsuario`,
+            {
+              headers: {
+                Authorization: `Bearer ${token}`,
+              },
+            }
+          );
+          setEmpresas(res.data || []);
+        } else {
+          const res = await axios.get<EmpresaConUsuario[]>(
+            `${API_URL}/Api/GetEmpresas`
           );
           setEmpresas(res.data || []);
         }
@@ -167,8 +181,9 @@ const Dashboard: React.FC = () => {
         setLoading(false);
       }
     };
+
     fetchEmpresas();
-  }, [user]);
+  }, [user, token]);
 
   useEffect(() => {
     if (empresas.length === 0) return;
