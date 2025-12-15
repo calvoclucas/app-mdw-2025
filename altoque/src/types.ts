@@ -1,3 +1,11 @@
+export type Producto = {
+  _id: string;
+  nombre: string;
+  descripcion?: string;
+  precio?: number;
+  imagen?: string;
+};
+
 export type Pedido = {
   _id: string;
   id_cliente?: {
@@ -36,6 +44,7 @@ export type Pedido = {
 export type EmpresaConUsuario = {
   _id: string;
   email: string;
+  productos?: Producto[];
   empresa?: {
     _id: string;
     nombre: string;
@@ -44,6 +53,7 @@ export type EmpresaConUsuario = {
     horario_apertura: string;
     horario_cierre: string;
     costo_envio: number;
+    categoria?: string;
   };
   direccion?: {
     calle: string;

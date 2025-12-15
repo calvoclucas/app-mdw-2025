@@ -68,18 +68,21 @@ const Login: React.FC = () => {
       const firebaseUser = userCredential.user;
       const token = await firebaseUser.getIdToken();
 
-      const { data } = await axios.post<LoginResponse>(
-        `${API_URL}/api/login`,
-        { token }
-      );
+      const { data } = await axios.post<LoginResponse>(`${API_URL}/api/login`, {
+        token,
+      });
+
+      if (!data.user._id) {
+        throw new Error("Usuario sin ID");
+      }
 
       const appUser: AppUser = {
+        _id: data.user._id,
         firebaseUid: data.user.firebaseUid || firebaseUser.uid,
         email: data.user.email,
         name: data.user.name,
         lastName: data.user.lastName,
         role: data.user.role as "cliente" | "empresa",
-        _id: data.user._id,
         empresa: data.user.empresa,
         cliente: data.user.cliente,
       };
@@ -104,11 +107,7 @@ const Login: React.FC = () => {
         className="bg-white p-10 rounded-xl shadow-2xl w-full max-w-sm transform transition duration-500 hover:scale-105"
       >
         <div className="flex justify-center mb-4">
-          <img
-            src={logo}
-            alt="Logo"
-            className="w-40 h-auto object-contain"
-          />
+          <img src={logo} alt="Logo" className="w-40 h-auto object-contain" />
         </div>
 
         <h2 className="text-3xl font-bold mb-6 text-center text-gray-800">
@@ -116,9 +115,7 @@ const Login: React.FC = () => {
         </h2>
 
         {error && (
-          <p className="text-red-500 mb-4 text-center font-medium">
-            {error}
-          </p>
+          <p className="text-red-500 mb-4 text-center font-medium">{error}</p>
         )}
 
         <input

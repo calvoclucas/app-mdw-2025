@@ -66,7 +66,7 @@ export const GetPedidosByCliente = async (req: Request, res: Response) => {
 export const GetPedidosByEmpresa = async (req: Request, res: Response) => {
   try {
     const { id_empresa } = req.params;
-    if (!mongoose.Types.ObjectId.isValid(id_cliente)) {
+    if (!mongoose.Types.ObjectId.isValid(id_empresa)) {
   return res.status(400).json({ error: "ID de cliente inválido" });
 }
 
