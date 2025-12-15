@@ -352,8 +352,25 @@ const Dashboard: React.FC = () => {
             onChange={(e) => setSearchTerm(e.target.value)}
             className="w-full md:w-1/2 p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 transition"
           />
-        </div>
+          <select
+            className="p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400 transition"
+            onChange={(e) => setFilterCategory(e.target.value)}
+          >
+            <option value="">Todas las categorías</option>
+            <option value="pizzeria">Pizzerías</option>
+            <option value="hamburgueseria">Hamburgueserías</option>
+            <option value="heladeria">Heladerías</option>
+          </select>
 
+          <select
+            className="p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400 transition"
+            onChange={(e) => setFilterOpen(e.target.value)}
+          >
+            <option value="">Todos</option>
+            <option value="open">Abierto ahora</option>
+            <option value="closed">Cerrado</option>
+          </select>
+        </div>
         {empresasFavoritas.length > 0 && (
           <div className="mb-6">
             <h3 className="text-lg font-semibold text-gray-800 mb-2">
