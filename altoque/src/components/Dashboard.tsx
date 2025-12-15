@@ -7,6 +7,9 @@ import axios from "axios";
 import { FaUserCircle } from "react-icons/fa";
 import logo from "../assets/logo_altoque.png";
 import Footer from "../components/Footer";
+import { Pedido, EstadoPedido } from ".././types";
+import EstadisticasEmpresa from "../components/EstadisticasEmpresa";
+import PedidoDashboardBar from "../components/PedidosProgressDashboard";
 
 interface Empresa {
   _id: string;
@@ -138,7 +141,7 @@ const EmpresaCard: React.FC<{
 const Dashboard: React.FC = () => {
   const location = useLocation();
   const state = location.state as { mensaje?: string } | undefined;
-
+  const [pedidos, setPedidos] = useState<Pedido[]>([]);
   const [pedidoMensaje, setPedidoMensaje] = useState(state?.mensaje || "");
   const [searchTerm, setSearchTerm] = useState("");
   const [filterCategory, setFilterCategory] = useState("");
@@ -286,19 +289,42 @@ const Dashboard: React.FC = () => {
             Altoque
           </h1>
         </div>
+
         <div className="flex items-center gap-3 relative">
-          <button
-            className="bg-green-600 text-white px-3 py-1.5 rounded-full font-semibold shadow-sm hover:bg-green-300 transition-colors text-sm hover:cursor-pointer"
-            onClick={() => {
-              const id =
-                user?.role === "empresa"
-                  ? user?.empresa?._id
-                  : user?.cliente?._id;
-              navigate(`/historial/${id}`, { state: { tipo: user?.role } });
-            }}
-          >
-            Mis Pedidos
-          </button>
+          {user?.role === "empresa" ? (
+            <div className="flex gap-3">
+              <button
+                className="bg-green-600 text-white px-3 py-1.5 rounded-full font-semibold shadow-sm hover:bg-green-300 transition-colors text-sm"
+                onClick={() => {
+                  const id = user?.empresa?._id;
+                  navigate(`/historial/${id}`, { state: { tipo: user?.role } });
+                }}
+              >
+                Mis Pedidos
+              </button>
+              <button
+                className="bg-blue-600 text-white px-3 py-1.5 rounded-full font-semibold shadow-sm hover:bg-blue-700 transition-colors text-sm"
+                onClick={() =>
+                  navigate(`/productos/${user.empresa?._id}`, {
+                    state: { tipo: "empresa" },
+                  })
+                }
+              >
+                Administrar Productos
+              </button>
+            </div>
+          ) : (
+            <button
+              className="bg-green-600 text-white px-3 py-1.5 rounded-full font-semibold shadow-sm hover:bg-green-300 transition-colors text-sm"
+              onClick={() => {
+                const id = user?.cliente?._id;
+                navigate(`/historial/${id}`, { state: { tipo: user?.role } });
+              }}
+            >
+              Mis Pedidos
+            </button>
+          )}
+
           <div className="relative">
             <button
               onClick={() => setProfileOpen(!profileOpen)}
@@ -343,79 +369,125 @@ const Dashboard: React.FC = () => {
           </span>
         </h2>
 
-        <div className="mb-6 flex flex-col md:flex-row md:items-center md:gap-4">
-          <input
-            type="text"
-            placeholder="Buscar empresa..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full md:w-1/2 p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 transition"
-          />
-          <select
-            className="p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400 transition"
-            onChange={(e) => setFilterCategory(e.target.value)}
-          >
-            <option value="">Todas las categorías</option>
-            <option value="pizzeria">Pizzerías</option>
-            <option value="hamburgueseria">Hamburgueserías</option>
-            <option value="heladeria">Heladerías</option>
-          </select>
+        {user?.role !== "empresa" && (
+          <div className="mb-6 flex flex-col md:flex-row md:items-center md:gap-4">
+            <input
+              type="text"
+              placeholder="Buscar empresa..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full md:w-1/2 p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 transition"
+            />
+            <select
+              className="p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400 transition"
+              onChange={(e) => setFilterCategory(e.target.value)}
+            >
+              <option value="">Todas las categorías</option>
+              <option value="pizzeria">Pizzerías</option>
+              <option value="hamburgueseria">Hamburgueserías</option>
+              <option value="heladeria">Heladerías</option>
+            </select>
 
-          <select
-            className="p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400 transition"
-            onChange={(e) => setFilterOpen(e.target.value)}
-          >
-            <option value="">Todos</option>
-            <option value="open">Abierto ahora</option>
-            <option value="closed">Cerrado</option>
-          </select>
-        </div>
-        {empresasFavoritas.length > 0 && (
-          <div className="mb-6">
-            <h3 className="text-lg font-semibold text-gray-800 mb-2">
-              Tus Favoritos
+            <select
+              className="p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400 transition"
+              onChange={(e) => setFilterOpen(e.target.value)}
+            >
+              <option value="">Todos</option>
+              <option value="open">Abierto ahora</option>
+              <option value="closed">Cerrado</option>
+            </select>
+          </div>
+        )}
+
+        {user?.role === "empresa" && (
+          <div className="flex flex-col gap-6">
+            <EstadisticasEmpresa pedidos={pedidos} />
+
+            <h3 className="text-lg font-semibold text-gray-800">
+              Pedidos recientes
             </h3>
-            <div className="flex gap-4 overflow-x-auto">
-              {empresasFavoritas.map((f) => (
-                <EmpresaCard
-                  key={f._id}
-                  empresa={f}
-                  imagen={imagenes[f._id] || genericRestaurantImage}
-                  favorito={true}
-                  onFavorite={toggleFavorito}
-                />
-              ))}
+
+            {loading ? (
+              <p>Cargando pedidos...</p>
+            ) : pedidos.length === 0 ? (
+              <p>No hay pedidos aún</p>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {pedidos.map((pedido) => (
+                  <div
+                    key={pedido._id}
+                    className="bg-white shadow rounded-xl p-4"
+                  >
+                    <p className="text-gray-500 text-sm">
+                      Cliente: {pedido.id_cliente?.nombre || "Desconocido"}
+                    </p>
+                    <p className="text-gray-500 text-sm">
+                      Total: ${pedido.total?.toFixed(2)}
+                    </p>
+                    <p className="text-gray-500 text-sm">
+                      Estado: {pedido.estado}
+                    </p>
+                    <p className="text-gray-500 text-sm">
+                      Fecha:{" "}
+                      {pedido.createdAt
+                        ? new Date(pedido.createdAt).toLocaleString()
+                        : "Fecha no disponible"}
+                    </p>
+
+                    <PedidoDashboardBar
+                      pedido={{
+                        ...pedido,
+                        estado: (pedido.estado as EstadoPedido) || "pendiente",
+                      }}
+                    />
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {user?.role !== "empresa" && (
+          <>
+            {empresasFavoritas.length > 0 && (
+              <div className="mb-6">
+                <h3 className="text-lg font-semibold text-gray-800 mb-2">
+                  Tus Favoritos
+                </h3>
+                <div className="flex gap-4 overflow-x-auto">
+                  {empresasFavoritas.map((f) => (
+                    <EmpresaCard
+                      key={f._id}
+                      empresa={f}
+                      imagen={imagenes[f._id] || genericRestaurantImage}
+                      favorito={true}
+                      onFavorite={toggleFavorito}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {!loading && empresasFiltradas.length === 0 && (
+              <p className="text-gray-500 text-center py-10">
+                No se encontraron empresas que coincidan con tu búsqueda.
+              </p>
+            )}
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              {!loading &&
+                empresasFiltradas.map((item) => (
+                  <EmpresaCard
+                    key={item._id}
+                    empresa={item}
+                    imagen={imagenes[item._id] || genericRestaurantImage}
+                    favorito={favoritos.includes(item._id)}
+                    onFavorite={toggleFavorito}
+                  />
+                ))}
             </div>
-          </div>
+          </>
         )}
-
-        {loading && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            <CardSkeleton />
-            <CardSkeleton />
-            <CardSkeleton />
-            <CardSkeleton />
-          </div>
-        )}
-
-        {!loading && empresasFiltradas.length === 0 && (
-          <p className="text-gray-500 text-center py-10">
-            No se encontraron empresas que coincidan con tu búsqueda.
-          </p>
-        )}
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {!loading &&
-            empresasFiltradas.map((item) => (
-              <EmpresaCard
-                key={item._id}
-                empresa={item}
-                imagen={imagenes[item._id] || genericRestaurantImage}
-                favorito={favoritos.includes(item._id)}
-                onFavorite={toggleFavorito}
-              />
-            ))}
-        </div>
       </main>
 
       {showGuestToast && (
