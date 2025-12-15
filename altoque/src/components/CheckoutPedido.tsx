@@ -55,6 +55,9 @@ const CheckoutPedido: React.FC = () => {
   const total = state?.total ?? 0;
   const empresaId = state?.empresaId ?? "";
   const user = useSelector((state: RootState) => state.auth.user);
+  const authToken = localStorage.getItem("token");
+  const esInvitado = authToken?.startsWith("guest-");
+  const [showGuestToast, setShowGuestToast] = useState(false);
 
   const [tipoEntrega, setTipoEntrega] = useState<"retiro" | "domicilio">(
     "retiro"
@@ -87,7 +90,7 @@ const CheckoutPedido: React.FC = () => {
   }, []);
 
   const DEFAULT_DIRECCION_ID = "68f1c409f11a42140ab02aa2";
-  const token = localStorage.getItem("token");
+
   const obtenerDireccion = async (): Promise<string> => {
     try {
       if (tipoEntrega === "domicilio" && user?.role === "cliente") {
@@ -110,6 +113,14 @@ const CheckoutPedido: React.FC = () => {
   };
 
   const handleConfirmarPedido = async () => {
+    if (esInvitado) {
+      setShowGuestToast(true);
+      setTimeout(() => {
+        navigate("/login");
+      }, 3000);
+
+      return;
+    }
     if (!metodoPagoSeleccionado) {
       alert("Por favor selecciona un método de pago");
       return;
@@ -120,7 +131,7 @@ const CheckoutPedido: React.FC = () => {
 
     const authHeaders = {
       headers: {
-        Authorization: `Bearer ${token}`,
+        Authorization: `Bearer ${authToken}`,
       },
     };
 
@@ -406,9 +417,13 @@ const CheckoutPedido: React.FC = () => {
           <button
             onClick={handleConfirmarPedido}
             disabled={procesando || !metodoPagoSeleccionado}
-            className="w-full bg-gradient-to-r from-green-500 to-emerald-500 text-white px-8 py-4 rounded-full font-bold text-lg hover:from-green-600 hover:to-emerald-600 transition-all shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            className="w-full bg-gradient-to-r from-green-500 to-emerald-500 text-white px-8 py-4 rounded-full font-bold text-lg 
+  hover:from-green-600 hover:to-emerald-600 transition-all shadow-lg hover:shadow-xl 
+  disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
           >
-            {procesando ? (
+            {esInvitado ? (
+              "Inicia sesión para confirmar el pedido"
+            ) : procesando ? (
               <>
                 <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white"></div>
                 Procesando...
@@ -422,6 +437,30 @@ const CheckoutPedido: React.FC = () => {
           </button>
         </div>
       </div>
+
+      {showGuestToast && (
+        <div className="fixed top-24 right-10 bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 rounded shadow-lg flex items-start gap-3 w-80 animate-slide-in z-50">
+          <svg
+            className="w-6 h-6 flex-shrink-0 mt-1"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M13 16h-1v-4h-1m1-4h.01M12 20h.01M12 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+            />
+          </svg>
+          <div className="flex-1">
+            <p className="font-semibold">Estás navegando como invitado</p>
+            <p className="text-sm text-gray-700">
+              Para confirmar tu pedido, inicia sesión o crea una cuenta.
+            </p>
+          </div>
+        </div>
+      )}
 
       <style>{`
         @keyframes blob {
