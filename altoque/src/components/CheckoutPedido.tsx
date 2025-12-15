@@ -13,7 +13,8 @@ import {
   CheckCircle,
 } from "lucide-react";
 
-const API_URL = import.meta.env.VITE_BACKEND_URL|| import.meta.env.VITE_LOCAL_HOST;
+const API_URL =
+  import.meta.env.VITE_BACKEND_URL || import.meta.env.VITE_LOCAL_HOST;
 
 interface PedidoCreado {
   _id: string;
@@ -86,7 +87,7 @@ const CheckoutPedido: React.FC = () => {
   }, []);
 
   const DEFAULT_DIRECCION_ID = "68f1c409f11a42140ab02aa2";
-
+  const token = localStorage.getItem("token");
   const obtenerDireccion = async (): Promise<string> => {
     try {
       if (tipoEntrega === "domicilio" && user?.role === "cliente") {
@@ -117,6 +118,12 @@ const CheckoutPedido: React.FC = () => {
     setProcesando(true);
     setError(null);
 
+    const authHeaders = {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    };
+
     try {
       const id_cliente =
         user?.role === "cliente" ? user.cliente?._id : undefined;
@@ -142,7 +149,8 @@ const CheckoutPedido: React.FC = () => {
 
       const { data: pedidoCreado } = await axios.post<PedidoCreado>(
         `${API_URL}/Api/CreatePedido`,
-        pedidoPayload
+        pedidoPayload,
+        authHeaders
       );
 
       if (!pedidoCreado?._id)
@@ -155,15 +163,19 @@ const CheckoutPedido: React.FC = () => {
         precio_unitario: item.precio,
       }));
 
-      await axios.post(`${API_URL}/Api/CreateDetallePedido`, {
-        detalles: detallesPayload,
-      });
+      await axios.post(
+        `${API_URL}/Api/CreateDetallePedido`,
+        { detalles: detallesPayload },
+        authHeaders
+      );
 
       await Promise.all(
         carrito.map(async (item) => {
-          await axios.put(`${API_URL}/Api/EditProducto/${item._id}`, {
-            $inc: { cantidad: -item.cantidad },
-          });
+          await axios.put(
+            `${API_URL}/Api/EditProducto/${item._id}`,
+            { $inc: { cantidad: -item.cantidad } },
+            authHeaders
+          );
         })
       );
 
