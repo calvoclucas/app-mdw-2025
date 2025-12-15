@@ -204,7 +204,6 @@ const Dashboard: React.FC = () => {
         } else {
           const res = await axios.get<Empresa[]>(`${API_URL}/Api/GetEmpresas`);
           setEmpresas(res.data || []);
-          console.log("Datos invitado:", res.data);
         }
       } catch (err) {
         console.error("Error cargando empresas:", err);

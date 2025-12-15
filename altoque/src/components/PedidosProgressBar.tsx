@@ -38,7 +38,11 @@ export default function PedidoProgressBar({
   const [modalOpen, setModalOpen] = useState(false);
   const [accion, setAccion] = useState<EstadoPedido | "">("");
   const [loading, setLoading] = useState(false);
-
+  const token = localStorage.getItem("token");
+  if (!token) {
+    console.error("No hay token");
+    return;
+  }
   const estadoActual = pedido.estado.toLowerCase() as EstadoPedido;
   const currentIndex = estados.indexOf(estadoActual);
   const IconActual = iconos[estadoActual] || Clock;
@@ -51,13 +55,20 @@ export default function PedidoProgressBar({
   const handleChangeEstado = async (nuevoEstado: EstadoPedido) => {
     setLoading(true);
     try {
-      await axios.put(`${API_URL}/Api/EditPedido/${pedido._id}`, {
-        estado: nuevoEstado,
-      });
+      console.log(token);
+      await axios.put(
+        `${API_URL}/Api/EditPedido/${pedido._id}`,
+        { estado: nuevoEstado },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
 
       onUpdate?.(pedido._id, nuevoEstado);
     } catch (err) {
-      console.error("Error al actualizar el pedido:", err);
+      console.log("Error al actualizar el pedido:", err);
     } finally {
       setLoading(false);
       setModalOpen(false);
