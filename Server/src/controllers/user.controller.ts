@@ -3,7 +3,7 @@ import User from "../models/User";
 import Empresa from "../models/Empresa";
 import Cliente from "../models/Cliente";
 import { Types } from "mongoose";
-
+import Direccion from "../models/Direccion";
 export const getUsers = async (req: Request, res: Response) => {
   try {
     const detalles = await User.find();
@@ -102,21 +102,69 @@ export const createUser = async (req: Request, res: Response) => {
 
 export const EditUser = async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
-    const updatedUser = await User.findByIdAndUpdate(id, req.body, {
-      new: true,
-    });
+    const userId = req.params.id;
+    const { name, lastName, email, address, client, company } = req.body;
 
-    if (updatedUser)
-      return res
-        .status(200)
-        .json({ message: "actualizado correctamente", user: req.body });
+    const user = await User.findByIdAndUpdate(
+      userId,
+      { name, lastName, email },
+      { new: true }
+    );
 
-    if (!updatedUser)
+    if (!user) {
       return res.status(404).json({ message: "Usuario no encontrado" });
-    res.json(updatedUser);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Error al actualizar el usuario" });
+    }
+
+    if (address) {
+      await Direccion.findOneAndUpdate(
+        { id_user: userId },
+        {
+          calle: address.street,
+          numero: address.number,
+          ciudad: address.city,
+          provincia: address.province,
+          cp: address.postalCode,
+        },
+        { upsert: true, new: true }
+      );
+    }
+
+    if (client && user.role === "cliente") {
+      await Cliente.findOneAndUpdate(
+        { _id: user.cliente },
+        { telefono: client.telefono },
+        { new: true }
+      );
+    }
+
+    if (company && user.role === "empresa") {
+      await Empresa.findOneAndUpdate(
+        { _id: user.empresa },
+        {
+          horario_apertura: company.openTime,
+          horario_cierre: company.closeTime,
+        },
+        { new: true }
+      );
+    }
+
+    const populatedUser = await User.findById(userId)
+      .populate("cliente")
+      .populate("empresa")
+      .lean();
+
+    const direccion = await Direccion.findOne({ id_user: userId });
+
+    res.status(200).json({
+      ...populatedUser,
+      direccion,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Error actualizando usuario" });
   }
 };
+
+
+
+

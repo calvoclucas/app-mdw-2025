@@ -90,3 +90,73 @@ export const login = async (req: Request, res: Response) => {
   }
 };
 
+export const me = async (req: Request, res: Response) => {
+  try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader) {
+      return res.status(401).json({ error: "Token no enviado" });
+    }
+
+    const token = authHeader.split(" ")[1];
+    const decoded = await admin.auth().verifyIdToken(token);
+
+    const user = await User.findOne({ firebaseUid: decoded.uid })
+      .populate("empresa cliente");
+
+    if (!user) {
+      return res.status(404).json({ error: "Usuario no encontrado" });
+    }
+
+    const direccion = await Direccion.findOne({ id_user: user._id });
+
+    const response: any = {
+      _id: user._id,
+      firebaseUid: user.firebaseUid,
+      email: user.email,
+      name: user.name,
+      lastName: user.lastName,
+      role: user.role,
+      isActive: user.isActive,
+      direccion,
+    };
+
+    if (user.role === "empresa" && user.empresa) {
+      const empresa = await Empresa.findById(user.empresa);
+      if (empresa) {
+        response.empresa = {
+          _id: empresa._id,
+          nombre: empresa.nombre,
+          email: empresa.email,
+          telefono: empresa.telefono,
+          costo_envio: empresa.costo_envio,
+          horario_apertura: empresa.horario_apertura,
+          horario_cierre: empresa.horario_cierre,
+        };
+      }
+    }
+
+    if (user.role === "cliente" && user.cliente) {
+      const cliente = await Cliente.findById(user.cliente);
+      if (cliente) {
+        response.cliente = {
+          _id: cliente._id,
+          nombre: cliente.nombre,
+          telefono: cliente.telefono,
+          puntos: cliente.puntos,
+        };
+      }
+    }
+
+    return res.json(response);
+  } catch (error) {
+    return res.status(401).json({ error: "Token inválido" });
+  }
+};
+
+export const changePassword = async (req: Request, res: Response) => {
+  try{
+
+  }catch(error){
+    return res.status(401).json({ error: "Token inválido" });
+  }
+}
