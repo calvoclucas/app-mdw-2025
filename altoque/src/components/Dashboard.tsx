@@ -71,7 +71,7 @@ const EmpresaCard: React.FC<{
   favorito?: boolean;
 }> = ({ empresa, imagen, onFavorite, favorito }) => {
   const navigate = useNavigate();
-
+  const [showToast, setShowToast] = useState(false);
   const abiertoAhora = (() => {
     if (!empresa.horario_apertura || !empresa.horario_cierre) return false;
     const horaActual = new Date().getHours();
@@ -84,57 +84,58 @@ const EmpresaCard: React.FC<{
 
   const handleClick = () => {
     if (!empresa._id) return;
+
+    if (!abiertoAhora) {
+      setShowToast(true);
+      setTimeout(() => setShowToast(false), 4000);
+      return;
+    }
+
     navigate(`/empresa/${empresa._id}`);
   };
 
   return (
-    <div
-      className="group bg-white rounded-xl shadow-sm overflow-hidden transform transition duration-300 hover:scale-[1.03] hover:shadow-md border border-gray-100 m-4 cursor-pointer relative"
-      onClick={handleClick}
-    >
-      <div className="relative">
-        <img
-          src={imagen || genericRestaurantImage}
-          alt={empresa.nombre || "Empresa"}
-          className="w-full h-36 object-cover transition duration-300 hover:opacity-90"
-          onError={(e) => {
-            e.currentTarget.src = genericRestaurantImage;
-          }}
-        />
-        <div
-          className={`absolute top-2 left-2 px-2 py-1 text-xs font-bold rounded-full shadow-md text-white`}
-          style={{ backgroundColor: abiertoAhora ? "#16a34a" : "#dc2626" }}
-        >
-          {abiertoAhora
-            ? `ABIERTO | Cierra ${empresa.horario_cierre}`
-            : `CERRADO | Abre ${empresa.horario_apertura}`}
-        </div>
-        <div className="absolute bottom-2 right-2 bg-white text-gray-800 px-2 py-1 text-xs font-semibold rounded-full shadow">
-          Envío: ${empresa.costo_envio?.toFixed(2) || "0.00"}
-        </div>
-        {onFavorite && (
-          <button
-            className={`absolute top-2 right-2 text-lg p-1 rounded-full ${
-              favorito ? "text-yellow-400" : "text-gray-300"
-            } hover:text-yellow-500 transition`}
-            onClick={(e) => {
-              e.stopPropagation();
-              onFavorite(empresa._id);
+    <div className="relative">
+      <div
+        className="group bg-white rounded-xl shadow-sm overflow-hidden transform transition duration-300 hover:scale-[1.03] hover:shadow-md border border-gray-100 m-4 cursor-pointer"
+        onClick={handleClick}
+      >
+        <div className="relative">
+          <img
+            src={imagen || genericRestaurantImage}
+            alt={empresa.nombre || "Empresa"}
+            className="w-full h-36 object-cover transition duration-300 hover:opacity-90"
+            onError={(e) => {
+              e.currentTarget.src = genericRestaurantImage;
             }}
+          />
+          <div
+            className={`absolute top-2 left-2 px-2 py-1 text-xs font-bold rounded-full shadow-md text-white`}
+            style={{ backgroundColor: abiertoAhora ? "#16a34a" : "#dc2626" }}
           >
-            ★
-          </button>
-        )}
+            {abiertoAhora
+              ? `ABIERTO | Cierra ${empresa.horario_cierre}`
+              : `CERRADO | Abre ${empresa.horario_apertura}`}
+          </div>
+        </div>
+
+        <div className="p-4 flex flex-col gap-2 text-sm">
+          <h3 className="text-base font-semibold text-gray-900 truncate group-hover:text-yellow-500 transition-colors">
+            {empresa.nombre}
+          </h3>
+          <p className="text-gray-600">{empresa.email}</p>
+          {empresa.telefono && (
+            <p className="text-gray-600">{empresa.telefono}</p>
+          )}
+        </div>
       </div>
-      <div className="p-4 flex flex-col gap-2 text-sm">
-        <h3 className="text-base font-semibold text-gray-900 truncate group-hover:text-yellow-500 transition-colors">
-          {empresa.nombre}
-        </h3>
-        <p className="text-gray-600">{empresa.email}</p>
-        {empresa.telefono && (
-          <p className="text-gray-600">{empresa.telefono}</p>
-        )}
-      </div>
+
+      {showToast && (
+        <div className="fixed top-16 right-8 bg-red-500 text-white px-4 py-2 rounded shadow-lg z-50 animate-slide-in">
+          La empresa "{empresa.nombre}" está cerrada. Vuelve durante su horario
+          de apertura.
+        </div>
+      )}
     </div>
   );
 };
@@ -220,36 +221,36 @@ const Dashboard: React.FC = () => {
   }, [user, token, navigate]);
 
   useEffect(() => {
-  if (!user || user.role !== "empresa" || !token) return;
+    if (!user || user.role !== "empresa" || !token) return;
 
-  const fetchPedidosEmpresa = async () => {
-    setLoading(true);
-    try {
-      const empresaId = user.empresa?._id;
-      if (!empresaId) return;
-      const res = await axios.get<Pedido[]>( `${API_URL}/Api/GetPedidosByEmpresa/${empresaId}`, { headers: { authorization: `Bearer ${token}`, role: 'empresa' } });
+    const fetchPedidosEmpresa = async () => {
+      setLoading(true);
+      try {
+        const empresaId = user.empresa?._id;
+        if (!empresaId) return;
+        const res = await axios.get<Pedido[]>(
+          `${API_URL}/Api/GetPedidosByEmpresa/${empresaId}`,
+          { headers: { authorization: `Bearer ${token}`, role: "empresa" } }
+        );
 
+        const pedidosNormalizados: Pedido[] = res.data.map((p) => ({
+          _id: p._id,
+          clienteNombre: p.id_cliente?.nombre || "Cliente desconocido",
+          total: p.total || 0,
+          estado: (p.estado as EstadoPedido) || "pendiente",
+          createdAt: p.createdAt,
+        }));
 
+        setPedidos(pedidosNormalizados);
+      } catch (err) {
+        console.error("Error cargando pedidos de la empresa:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-      const pedidosNormalizados: Pedido[] = res.data.map((p) => ({
-        _id: p._id,
-        clienteNombre: p.id_cliente?.nombre || "Cliente desconocido",
-        total: p.total || 0,
-        estado: (p.estado as EstadoPedido) || "pendiente",
-        createdAt: p.createdAt,
-      }));
-
-      setPedidos(pedidosNormalizados);
-    } catch (err) {
-      console.error("Error cargando pedidos de la empresa:", err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  fetchPedidosEmpresa();
-}, [user, token]);
-
+    fetchPedidosEmpresa();
+  }, [user, token]);
 
   useEffect(() => {
     if (empresas.length === 0) return;
@@ -411,6 +412,7 @@ const Dashboard: React.FC = () => {
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full md:w-1/2 p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 transition"
             />
+            {/*
             <select
               className="p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400 transition"
               onChange={(e) => setFilterCategory(e.target.value)}
@@ -420,7 +422,7 @@ const Dashboard: React.FC = () => {
               <option value="hamburgueseria">Hamburgueserías</option>
               <option value="heladeria">Heladerías</option>
             </select>
-
+*/}
             <select
               className="p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400 transition"
               onChange={(e) => setFilterOpen(e.target.value)}
@@ -433,50 +435,52 @@ const Dashboard: React.FC = () => {
         )}
 
         {user?.role === "empresa" && (
-  <div className="flex flex-col gap-6">
-    <EstadisticasEmpresa pedidos={pedidos} />
+          <div className="flex flex-col gap-6">
+            <EstadisticasEmpresa pedidos={pedidos} />
 
-    <h3 className="text-lg font-semibold text-gray-800">
-      Pedidos recientes
-    </h3>
+            <h3 className="text-lg font-semibold text-gray-800">
+              Pedidos recientes
+            </h3>
 
-    {loading ? (
-      <p>Cargando pedidos...</p>
-    ) : pedidos.length === 0 ? (
-      <p>No hay pedidos aún</p>
-    ) : (
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        {pedidos.map((pedido) => (
-          <div key={pedido._id} className="bg-white shadow rounded-xl p-4">
-            <p className="text-gray-500 text-sm">
-              Cliente: {pedido.id_cliente?.nombre}
-            </p>
-            <p className="text-gray-500 text-sm">
-              Total: ${pedido.total?.toFixed(2)}
-            </p>
-            <p className="text-gray-500 text-sm">
-              Estado: {pedido.estado}
-            </p>
-            <p className="text-gray-500 text-sm">
-              Fecha:{" "}
-              {pedido.createdAt
-                ? new Date(pedido.createdAt).toLocaleString()
-                : "Fecha no disponible"}
-            </p>
+            {loading ? (
+              <p>Cargando pedidos...</p>
+            ) : pedidos.length === 0 ? (
+              <p>No hay pedidos aún</p>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {pedidos.map((pedido) => (
+                  <div
+                    key={pedido._id}
+                    className="bg-white shadow rounded-xl p-4"
+                  >
+                    <p className="text-gray-500 text-sm">
+                      Cliente: {pedido.id_cliente?.nombre}
+                    </p>
+                    <p className="text-gray-500 text-sm">
+                      Total: ${pedido.total?.toFixed(2)}
+                    </p>
+                    <p className="text-gray-500 text-sm">
+                      Estado: {pedido.estado}
+                    </p>
+                    <p className="text-gray-500 text-sm">
+                      Fecha:{" "}
+                      {pedido.createdAt
+                        ? new Date(pedido.createdAt).toLocaleString()
+                        : "Fecha no disponible"}
+                    </p>
 
-            <PedidoDashboardBar
-              pedido={{
-                ...pedido,
-                estado: (pedido.estado as EstadoPedido) || "pendiente",
-              }}
-            />
+                    <PedidoDashboardBar
+                      pedido={{
+                        ...pedido,
+                        estado: (pedido.estado as EstadoPedido) || "pendiente",
+                      }}
+                    />
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
-        ))}
-      </div>
-    )}
-  </div>
-)}
-
+        )}
 
         {user?.role !== "empresa" && (
           <>
