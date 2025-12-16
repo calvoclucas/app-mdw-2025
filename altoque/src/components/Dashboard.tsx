@@ -3,6 +3,7 @@ import { useSelector, useDispatch } from "react-redux";
 import { useNavigate, useLocation } from "react-router-dom";
 import { logout } from "../features/auth/authSlice.js";
 import type { RootState, AppDispatch } from "../app/store.js";
+import { login, AppUser } from "../features/auth/authSlice";
 import axios from "axios";
 import { FaUserCircle } from "react-icons/fa";
 import logo from "../assets/logo_altoque.png";
@@ -194,7 +195,22 @@ const Dashboard: React.FC = () => {
     if (user === undefined) return;
     if (!user) {
       setLoading(false);
-      navigate("/login");
+      navigate("/dashboard");
+      const guestUser: AppUser = {
+        _id: "guest",
+        firebaseUid: "guest",
+        email: "invitado@altoque.app",
+        name: "Invitado",
+        lastName: "",
+        role: "cliente",
+        isActive: true,
+      };
+      dispatch(
+        login({
+          user: guestUser,
+          token: "guest-token",
+        })
+      );
       return;
     }
 
