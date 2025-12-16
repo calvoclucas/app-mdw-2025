@@ -27,7 +27,7 @@ app.use((0, cors_1.default)({
         "https://app-mdw-2025.vercel.app",
     ],
     methods: ["GET", "POST", "PUT", "DELETE"],
-    allowedHeaders: ["Content-Type", "Authorization"],
+    allowedHeaders: ["Content-Type", "Authorization", "Role"],
     credentials: true,
 }));
 app.use(express_1.default.json());
@@ -46,5 +46,5 @@ app.use("/Api", user_routes_1.default);
 app.use("/Api", producto_routes_1.default);
 app.use("/Api", pedido_routes_1.default);
 (0, db_1.default)().then(() => {
-    app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+    app.listen(PORT, () => console.log(`Server running on ${PORT}`));
 });
