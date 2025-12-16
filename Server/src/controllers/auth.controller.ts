@@ -1,9 +1,9 @@
 import { Request, Response } from "express";
 import admin from "../config/firebase";
-import User, { deleteUser } from "../models/User";
 import Empresa from "../models/Empresa";
 import Cliente from "../models/Cliente";
 import Direccion from "../models/Direccion"
+import User from "../models/User";
 import Joi from "joi";
 import { Types } from "mongoose";
 import { join } from "path";

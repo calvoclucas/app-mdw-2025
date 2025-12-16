@@ -5,7 +5,7 @@ import { AppUser, logout, setUser } from "../features/auth/authSlice.js";
 import type { RootState, AppDispatch } from "../app/store.js";
 import axios from "axios";
 import logo from "../assets/logo_altoque.png";
-import { FaUserCircle, FaArrowLeft, FaTrashAlt, FaKey, FaEdit } from "react-icons/fa";
+import { FaUserCircle, FaArrowLeft, FaTrashAlt, FaEdit } from "react-icons/fa";
 import Footer from "../components/Footer";
 
 const API_URL = import.meta.env.VITE_BACKEND_URL;
