@@ -26,6 +26,11 @@ export const RegisterUser = async (req: Request, res: Response) => {
       telefono,
       horario_apertura,
       horario_cierre,
+      calle,
+      numero,
+      ciudad,
+      provincia,
+      cp
     } = req.body;
 
     if (!firebaseUid || !email || !name || !lastName || !role) {
@@ -35,7 +40,7 @@ export const RegisterUser = async (req: Request, res: Response) => {
     const existingUser = await User.findOne({ email });
     if (existingUser) {
       return res.status(409).json({ error: "Usuario ya registrado" });
-    }
+    }    
 
     const user = new User({
       firebaseUid,
@@ -77,6 +82,16 @@ export const RegisterUser = async (req: Request, res: Response) => {
       await newUser.save();
       perfilCreado = clienteGuardado;
     }
+
+    await  Direccion.create({
+      id_user: newUser.id,
+      calle,
+      numero,
+      ciudad,
+      provincia,
+      cp,
+    });
+ 
 
     res.status(201).json({
       message: "Usuario registrado correctamente",

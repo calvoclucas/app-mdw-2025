@@ -170,7 +170,7 @@ const handleChangePassword = async () => {
               >
                 <FaEdit /> Mis Datos
               </button>
-              <button
+              {/* <button
                 className={`flex items-center gap-2 w-full px-4 py-2 rounded-lg hover:cursor-pointer hover:bg-yellow-50 transition ${
                   section === "password" ? "bg-yellow-100 font-semibold" : ""
                 }`}
@@ -183,7 +183,7 @@ const handleChangePassword = async () => {
                 onClick={() => setSection("borrar")}
               >
                 <FaTrashAlt /> Borrar Cuenta
-              </button>
+              </button> */}
             </>
           )}
 
