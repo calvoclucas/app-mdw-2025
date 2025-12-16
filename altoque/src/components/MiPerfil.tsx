@@ -23,7 +23,6 @@ const MiPerfil: React.FC = () => {
   const [name, setName] = useState(user?.name || "");
   const [lastName, setLastName] = useState(user?.lastName || "");
   const [email, setEmail] = useState(user?.email || "");
-  const [isActive, setActive] = useState(user?.isActive || true);
   const [role, setRole] = useState(user?.role || "");
   const [password, setPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
