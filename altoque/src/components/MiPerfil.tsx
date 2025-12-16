@@ -126,7 +126,7 @@ const handleChangePassword = async () => {
     if (!confirm("¿Desea confirmar la eliminación de su cuenta? Esta acción es irreversible.")) return;
     setLoading(true);
     try {
-      await axios.delete(`${API_URL}/Api/DeleteUser`);
+      await axios.put(`${API_URL}/Api/DeleteUser/${user?._id}`);
       showToast("success", "Cuenta eliminada");
       handleLogout();
     } catch (err) {
@@ -177,13 +177,13 @@ const handleChangePassword = async () => {
                 onClick={() => setSection("password")}
               >
                 <FaKey /> Cambiar Contraseña
-              </button>
+              </button> */}
               <button
                 className="flex items-center gap-2 w-full px-4 py-2 rounded-lg hover:bg-red-100 text-red-600 hover:cursor-pointer transition"
                 onClick={() => setSection("borrar")}
               >
                 <FaTrashAlt /> Borrar Cuenta
-              </button> */}
+              </button>
             </>
           )}
 

@@ -27,7 +27,7 @@ export const createUserSchema = Joi.object({
   name: Joi.string().required(),
   lastName: Joi.string().required(),
   email: Joi.string().email().required(),
-  isActive: Joi.boolean().optional(),
+  isActive: Joi.boolean().valid(true).required,
   role: Joi.string().valid("cliente", "empresa").required(),
   cliente: Joi.string().optional(),
   empresa: Joi.string().optional(),
@@ -43,6 +43,10 @@ export const updateUserSchema = Joi.object({
   cliente: Joi.string().optional(),
   empresa: Joi.string().optional(),
   firebaseUid: Joi.string().optional(),
+});
+
+export const deleteUser = Joi.object({
+  isActive: Joi.boolean().valid(true).required,
 });
 
 export default UserModel;

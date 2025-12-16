@@ -1,22 +1,24 @@
 import { Request, Response } from "express";
 import admin from "../config/firebase";
-import User from "../models/User";
+import User, { deleteUser } from "../models/User";
 import Empresa from "../models/Empresa";
 import Cliente from "../models/Cliente";
 import Direccion from "../models/Direccion"
 import Joi from "joi";
 import { Types } from "mongoose";
+import { join } from "path";
 
 const loginSchema = Joi.object({
   token: Joi.string().required().messages({
     "string.empty": "El token es obligatorio",
     "any.required": "El token es obligatorio",
-  }),
+  })
 });
 
 export const login = async (req: Request, res: Response) => {
   try {
-    const { error, value } = loginSchema.validate(req.body);
+    const { error, value } = loginSchema.validate(req.body) ;
+
     if (error) {
       return res.status(400).json({ error: error.details[0].message });
     }
@@ -28,8 +30,10 @@ export const login = async (req: Request, res: Response) => {
 
     let user = await User.findOne({ firebaseUid: uid }).populate("empresa cliente");
 
-    if (!user && email) {
+    if (!user && email && user.isActive) {
       user = await User.findOne({ email }).populate("empresa cliente");
+    }else if (!user.isActive) {
+      return res.status(404).json({error: "El usuario se encuentra deshabilitado! Volver a crear el usuario"});
     }
 
     if (!user) {
@@ -155,6 +159,31 @@ export const me = async (req: Request, res: Response) => {
 
 export const changePassword = async (req: Request, res: Response) => {
   try{
+
+  }catch(error){
+    return res.status(401).json({ error: "Token inválido" });
+  }
+}
+export const deleteUser = async(req:Request, res:Response)=>{
+   try{
+      const id_user = req.params.id;
+
+      if (!id_user) {
+            return res.status(400).json({ error: "El ID del usuario es requerido en el cuerpo de la solicitud." });
+        }
+      const deletedUser = await User.findOneAndUpdate({_id: id_user}, {isActive: false});
+
+      if (!deletedUser) {
+                  return res.status(404).json({ error: "Usuario no encontrado." });
+              }
+
+        return res.status(200).json({ 
+            message: "Usuario eliminado con éxito",
+            deletedUser: {
+                id: deletedUser._id,
+                email: (deletedUser as any).email
+            }
+        });
 
   }catch(error){
     return res.status(401).json({ error: "Token inválido" });
