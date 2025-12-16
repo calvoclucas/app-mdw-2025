@@ -17,7 +17,16 @@ export const getUsers = async (req: Request, res: Response) => {
 
 export const RegisterUser = async (req: Request, res: Response) => {
   try {
-    const { firebaseUid, email, name, lastName, role, telefono } = req.body;
+    const {
+      firebaseUid,
+      email,
+      name,
+      lastName,
+      role,
+      telefono,
+      horario_apertura,
+      horario_cierre,
+    } = req.body;
 
     if (!firebaseUid || !email || !name || !lastName || !role) {
       return res.status(400).json({ error: "Todos los campos son requeridos" });
@@ -46,6 +55,8 @@ export const RegisterUser = async (req: Request, res: Response) => {
         nombre: `${name} ${lastName}`,
         email,
         telefono: telefono || "",
+        horario_apertura: horario_apertura || "",
+        horario_cierre: horario_cierre || "",
       });
       const empresaGuardada = await empresa.save();
 
@@ -96,9 +107,11 @@ export const EditUser = async (req: Request, res: Response) => {
       new: true,
     });
 
-    if(updatedUser)
-      return res.status(200).json({message: "actualizado correctamente",user: req.body})
-    
+    if (updatedUser)
+      return res
+        .status(200)
+        .json({ message: "actualizado correctamente", user: req.body });
+
     if (!updatedUser)
       return res.status(404).json({ message: "Usuario no encontrado" });
     res.json(updatedUser);
