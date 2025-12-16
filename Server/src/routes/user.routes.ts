@@ -13,7 +13,7 @@ const router = express.Router();
 
 router.post("/CreateUser", authOptional, authRequired, rolesGuard(["empresa"]), createUser);
 router.get("/GetUsers", authOptional, authRequired, getUsers);
-router.put("/EditUser/:id", authOptional, authRequired, EditUser);
+router.put("/EditUser/:id", authRequired, rolesGuard(["empresa","cliente"]), EditUser);
 router.post("/RegisterUser", RegisterUser);
 
 export default router;

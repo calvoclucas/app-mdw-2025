@@ -25,7 +25,7 @@ app.use(
       "https://app-mdw-2025.vercel.app",
     ],
     methods: ["GET", "POST", "PUT", "DELETE"],
-    allowedHeaders: ["Content-Type", "Authorization"],
+    allowedHeaders: ["Content-Type", "Authorization","Role"],
     credentials: true,
   })
 );
@@ -49,5 +49,5 @@ app.use("/Api", productRoutes);
 app.use("/Api", pedidoRoutes);
 
 connectDB().then(() => {
-  app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+  app.listen(PORT, () => console.log(`Server running on ${PORT}`));
 });

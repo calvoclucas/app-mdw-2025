@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
-import { logout } from "../features/auth/authSlice.js";
+import { AppUser, logout, setUser } from "../features/auth/authSlice.js";
 import type { RootState, AppDispatch } from "../app/store.js";
 import axios from "axios";
 import logo from "../assets/logo_altoque.png";
@@ -14,16 +14,20 @@ const MiPerfil: React.FC = () => {
   const user = useSelector((state: RootState) => state.auth.user);
   const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
-
+  const token = localStorage.getItem("token");
   const [section, setSection] = useState<"datos" | "password" | "borrar">("datos");
   const [loading, setLoading] = useState(false);
   const [toastMessage, setToastMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
-const [confirmPassword, setConfirmPassword] = useState(""); 
+  const [confirmPassword, setConfirmPassword] = useState(""); 
+  // mis datos
   const [name, setName] = useState(user?.name || "");
   const [lastName, setLastName] = useState(user?.lastName || "");
   const [email, setEmail] = useState(user?.email || "");
+  const [isActive, setActive] = useState(user?.isActive || true);
+  const [role, setRole] = useState(user?.role || "");
   const [password, setPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
+
 
   useEffect(() => {
     if (!user) navigate("/login");
@@ -42,8 +46,13 @@ const [confirmPassword, setConfirmPassword] = useState("");
   const handleUpdateData = async () => {
     setLoading(true);
     try {
-      await axios.put(`${API_URL}/Api/UpdateUser`, { name, lastName, email });
-      showToast("success", "Datos actualizados correctamente!");
+      
+      const resp = await axios.put(`${API_URL}/Api/EditUser/${user?._id}`, { name, lastName, email, isActive, role }, { headers: { authorization: `Bearer ${token}`, role: user?.role } });
+
+      if(resp.status === 200){
+        showToast("success", "Datos actualizados correctamente!");
+        dispatch(setUser(resp.data as AppUser))
+      }
     } catch (err) {
       console.error(err);
       showToast("error", "Error actualizando datos");
@@ -92,6 +101,7 @@ const handleChangePassword = async () => {
       setLoading(false);
     }
   };
+
 
   const isGuest = user?.name === "Invitado";
 
@@ -180,6 +190,8 @@ const handleChangePassword = async () => {
                 placeholder="Email"
                 className="p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400"
               />
+             
+
               <button
                 onClick={handleUpdateData}
                 className="bg-yellow-400 text-white px-4 py-2 rounded-lg font-semibold hover:bg-yellow-500 transition w-40 hover:cursor-pointer"

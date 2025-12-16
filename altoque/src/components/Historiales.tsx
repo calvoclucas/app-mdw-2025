@@ -33,7 +33,7 @@ const Historiales: React.FC = () => {
   const tipo = (location.state as { tipo?: "cliente" | "empresa" })?.tipo || "cliente";
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
-
+const token = localStorage.getItem("token");
   const [historiales, setHistoriales] = useState<Historial[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -42,7 +42,7 @@ const Historiales: React.FC = () => {
 
   const handleVerDetalle = async (idPedido: string) => {
     try {
-      const { data } = await axios.get<DetallePedido[]>(`${API_URL}/Api/GetDetallesByPedido/${idPedido}`);
+      const { data } = await axios.get<DetallePedido[]>(`${API_URL}/Api/GetDetallesByPedido/${idPedido}`,  { headers: { authorization: `Bearer ${token}`} });
       setDetalles(data);
       setModalOpen(true);
     } catch (err) {
@@ -66,7 +66,7 @@ const Historiales: React.FC = () => {
         tipo === "cliente"
           ? `${API_URL}/Api/GetPedidosByCliente/${id}`
           : `${API_URL}/Api/GetPedidosByEmpresa/${id}`;
-      const res = await axios.get<Historial[]>(url);
+      const res = await axios.get<Historial[]>(url, { headers: { authorization: `Bearer ${token}`, role: tipo } });
       setHistoriales(res.data);
       setError(""); 
     } catch (err) {

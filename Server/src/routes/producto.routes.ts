@@ -16,7 +16,7 @@ router.get("/GetProductos", authOptional, GetProductos);
 router.get("/GetProductosByEmpresa/:id_empresa", authOptional, GetProductosByEmpresa);
 router.get("/GetProducto/:id", authOptional, GetProductoById);
 router.post("/CreateProducto", authOptional, authRequired, rolesGuard(["empresa"]), CreateProducto);
-router.put("/EditProducto/:id", authOptional,EditProducto);
-router.delete("/DeleteProducto/:id", authOptional, authRequired, rolesGuard(["empresa"]), DeleteProducto);
+router.put("/EditProducto/:id", authRequired, rolesGuard(["empresa"]), EditProducto);
+router.delete("/DeleteProducto/:id", authRequired, rolesGuard(["empresa"]), DeleteProducto);
 
 export default router;

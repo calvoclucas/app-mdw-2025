@@ -36,7 +36,6 @@ const Login: React.FC = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
-
   const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
 
@@ -63,7 +62,6 @@ const Login: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError("");
-
     try {
       const userCredential = await signInWithEmailAndPassword(
         auth,
@@ -74,7 +72,7 @@ const Login: React.FC = () => {
       const firebaseUser = userCredential.user;
       const token = await firebaseUser.getIdToken();
 
-      const { data } = await axios.post<LoginResponse>(`${API_URL}/api/login`, {
+      const { data } = await axios.post<LoginResponse>(`${API_URL}/Api/login`, {
         token,
       });
 

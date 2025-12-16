@@ -22,7 +22,7 @@ const ABMProducto: React.FC = () => {
   const user = useSelector((state: RootState) => state.auth.user) as AppUser;
   const empresaId = user?.empresa?._id;
   const navigate = useNavigate();
-
+   const tokenpost =  localStorage.getItem("token")
   const [productos, setProductos] = useState<Producto[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -41,9 +41,11 @@ const ABMProducto: React.FC = () => {
     if (!empresaId) return;
     setLoading(true);
     try {
+      
       const res = await axios.get<Producto[]>(
-        `${API_URL}/Api/GetProductosByEmpresa/${empresaId}`
+        `${API_URL}/Api/GetProductosByEmpresa/${empresaId}/`
       );
+
       setProductos(res.data);
     } catch (err) {
       console.error(err);
@@ -78,11 +80,11 @@ const ABMProducto: React.FC = () => {
     try {
       if (editingProducto) {
         await axios.put(
-          `${API_URL}/Api/EditProducto/${editingProducto._id}`,
-          form
+          `${API_URL}/Api/EditProducto/${editingProducto._id}`,form, { headers: { authorization: `Bearer ${tokenpost}`, role: `empresa` } },
         );
       } else {
-        await axios.post(`${API_URL}/Api/CreateProducto`, form);
+        await axios.post(`${API_URL}/Api/CreateProducto`, form,
+            { headers: { authorization: `Bearer ${tokenpost}`, role: `empresa` } });
       }
       setModalOpen(false);
       setEditingProducto(null);
@@ -110,7 +112,7 @@ const ABMProducto: React.FC = () => {
     if (!id) return;
     if (!window.confirm("¿Seguro que quieres eliminar este producto?")) return;
     try {
-      await axios.delete(`${API_URL}/Api/DeleteProducto/${id}`);
+      await axios.delete(`${API_URL}/Api/DeleteProducto/${id}`, { headers: { authorization: `Bearer ${tokenpost}`, role: `empresa` } });
       fetchProductos();
     } catch (err) {
       console.error(err);
