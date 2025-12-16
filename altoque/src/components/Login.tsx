@@ -47,6 +47,7 @@ const Login: React.FC = () => {
       name: "Invitado",
       lastName: "",
       role: "cliente",
+      isActive: true,
     };
 
     dispatch(
@@ -89,6 +90,7 @@ const Login: React.FC = () => {
         role: data.user.role as "cliente" | "empresa",
         empresa: data.user.empresa,
         cliente: data.user.cliente,
+        isActive: true,
       };
 
       dispatch(
