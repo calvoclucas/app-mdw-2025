@@ -3,7 +3,9 @@ import admin from "../config/firebase";
 import User from "../models/User";
 import Empresa from "../models/Empresa";
 import Cliente from "../models/Cliente";
+import Direccion from "../models/Direccion"
 import Joi from "joi";
+import { Types } from "mongoose";
 
 const loginSchema = Joi.object({
   token: Joi.string().required().messages({
@@ -15,16 +17,16 @@ const loginSchema = Joi.object({
 export const login = async (req: Request, res: Response) => {
   try {
     const { error, value } = loginSchema.validate(req.body);
-    if (error) return res.status(400).json({ error: error.details[0].message });
+    if (error) {
+      return res.status(400).json({ error: error.details[0].message });
+    }
 
     const { token } = value;
 
     const decodedToken = await admin.auth().verifyIdToken(token);
     const { uid, email } = decodedToken;
 
-    let user = await User.findOne({ firebaseUid: uid }).populate(
-      "empresa cliente"
-    );
+    let user = await User.findOne({ firebaseUid: uid }).populate("empresa cliente");
 
     if (!user && email) {
       user = await User.findOne({ email }).populate("empresa cliente");
@@ -32,10 +34,14 @@ export const login = async (req: Request, res: Response) => {
 
     if (!user) {
       return res.status(404).json({
-        error:
-          "Usuario no encontrado. Debe registrarse antes de iniciar sesión.",
+        error: "Usuario no encontrado. Debe registrarse antes de iniciar sesión.",
       });
     }
+
+    const dir = await Direccion.findOne({
+      id_user: new Types.ObjectId(user._id),
+    }).populate("id_user");
+
 
     const userResponse: any = {
       _id: user._id,
@@ -47,6 +53,7 @@ export const login = async (req: Request, res: Response) => {
       isActive: user.isActive,
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,
+      direccion: dir ?? null,
     };
 
     if (user.role === "empresa" && user.empresa) {
@@ -71,6 +78,7 @@ export const login = async (req: Request, res: Response) => {
           _id: cliente._id,
           nombre: cliente.nombre,
           puntos: cliente.puntos,
+          telefono: cliente.telefono,
         };
       }
     }
@@ -81,3 +89,4 @@ export const login = async (req: Request, res: Response) => {
     res.status(401).json({ error: "Token inválido o expirado" });
   }
 };
+
