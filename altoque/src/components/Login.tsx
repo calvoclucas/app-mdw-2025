@@ -22,12 +22,25 @@ interface LoginResponse {
     empresa?: {
       _id: string;
       nombre: string;
+      telefono:string;
     };
     cliente?: {
       _id: string;
       nombre: string;
       puntos: number;
+      telefono:string;
+      horario_apertura:string;
+      horario_cierre:string;
     };
+    direccion?:{
+      _id:string;
+      calle:string;
+      ciudad:string;
+      cp:string;
+      numero:string;
+      provincia:string;
+    };
+    isActive: boolean;
   };
   token?: string;
 }
@@ -90,6 +103,7 @@ const Login: React.FC = () => {
         role: data.user.role as "cliente" | "empresa",
         empresa: data.user.empresa,
         cliente: data.user.cliente,
+        direccion: data.user.direccion,
         isActive: true,
       };
 

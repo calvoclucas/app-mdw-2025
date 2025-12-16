@@ -28,6 +28,16 @@ const MiPerfil: React.FC = () => {
   const [password, setPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
 
+  const [phone, setPhone] = useState(user?.cliente?.telefono || "");
+  const [openTime, setOpenTime] = useState(user?.empresa?.horario_apertura || "");
+  const [closeTime, setCloseTime] = useState(user?.empresa?.horario_cierre || "");
+  const [street, setStreet] = useState(user?.direccion?.calle || "");
+  const [number, setNumber] = useState(user?.direccion?.numero || "");
+  const [city, setCity] = useState(user?.direccion?.ciudad || "");
+  const [province, setProvince] = useState(user?.direccion?.provincia || "");
+  const [postalCode, setPostalCode] = useState(user?.direccion?.cp || "");
+
+console.log(user);
 
   useEffect(() => {
     if (!user) navigate("/login");
@@ -43,23 +53,51 @@ const MiPerfil: React.FC = () => {
     navigate("/login");
   };
 
-  const handleUpdateData = async () => {
-    setLoading(true);
-    try {
-      
-      const resp = await axios.put(`${API_URL}/Api/EditUser/${user?._id}`, { name, lastName, email, isActive, role }, { headers: { authorization: `Bearer ${token}`, role: user?.role } });
+const handleUpdateData = async () => {
+  setLoading(true);
+  try {
+    const payload: any = {
+      name,
+      lastName,
+      email,
+      address: {
+        street,
+        number,
+        city,
+        province,
+        postalCode,
+      },
+    };
 
-      if(resp.status === 200){
-        showToast("success", "Datos actualizados correctamente!");
-        dispatch(setUser(resp.data as AppUser))
-      }
-    } catch (err) {
-      console.error(err);
-      showToast("error", "Error actualizando datos");
-    } finally {
-      setLoading(false);
+    if (role === "cliente") {
+      payload.client = { phone };
     }
-  };
+
+    if (role === "empresa") {
+      payload.company = {
+        openTime,
+        closeTime,
+      };
+    }
+
+    const resp = await axios.put(
+      `${API_URL}/Api/EditUser/${user?._id}`,
+      payload,
+      { headers: { authorization: `Bearer ${token}` } }
+    );
+
+    if (resp.status === 200) {
+      dispatch(setUser(resp.data as AppUser));
+      showToast("success", "Datos actualizados correctamente!");
+    }
+  } catch (err) {
+    console.error(err);
+    showToast("error", "Error actualizando datos");
+  } finally {
+    setLoading(false);
+  }
+};
+
 
 const handleChangePassword = async () => {
   if (!password || !newPassword || !confirmPassword) {
@@ -166,73 +204,141 @@ const handleChangePassword = async () => {
         </aside>
 
         <section className="flex-1 bg-white rounded-xl shadow-md p-6 ml-6 flex flex-col gap-6">
-          {!isGuest && section === "datos" && (
-            <div className="flex flex-col gap-4">
+         {!isGuest && section === "datos" && (
+            <div className="flex flex-col gap-6">
               <h2 className="text-2xl font-semibold text-gray-800">Mis Datos</h2>
-              <input
-                type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="Nombre"
-                className="p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400"
-              />
-              <input
-                type="text"
-                value={lastName}
-                onChange={(e) => setLastName(e.target.value)}
-                placeholder="Apellido"
-                className="p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400"
-              />
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="Email"
-                className="p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400"
-              />
-             
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <input
+                  type="text"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="Nombre"
+                  className="p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-400"
+                />
+
+                <input
+                  type="text"
+                  value={lastName}
+                  onChange={(e) => setLastName(e.target.value)}
+                  placeholder="Apellido"
+                  className="p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-400"
+                />
+
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="Email"
+                  className="p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-400"
+                />
+
+                {role === "cliente" && (
+                  <input
+                    type="text"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    placeholder="Teléfono"
+                    className="p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-400"
+                  />
+                )}
+
+                {role === "empresa" && (
+                  <>
+                    <input
+                      type="time"
+                      value={openTime}
+                      onChange={(e) => setOpenTime(e.target.value)}
+                      className="p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-400"
+                    />
+                    <input
+                      type="time"
+                      value={closeTime}
+                      onChange={(e) => setCloseTime(e.target.value)}
+                      className="p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-400"
+                    />
+                  </>
+                )}
+              </div>
+
+              <h3 className="text-lg font-semibold text-gray-700 mt-4">Dirección</h3>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <input
+                  value={street}
+                  onChange={(e) => setStreet(e.target.value)}
+                  placeholder="Calle"
+                  className="p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-400"
+                />
+                <input
+                  value={number}
+                  onChange={(e) => setNumber(e.target.value)}
+                  placeholder="Número"
+                  className="p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-400"
+                />
+                <input
+                  value={city}
+                  onChange={(e) => setCity(e.target.value)}
+                  placeholder="Ciudad"
+                  className="p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-400"
+                />
+                <input
+                  value={province}
+                  onChange={(e) => setProvince(e.target.value)}
+                  placeholder="Provincia"
+                  className="p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-400"
+                />
+                <input
+                  value={postalCode}
+                  onChange={(e) => setPostalCode(e.target.value)}
+                  placeholder="Código Postal"
+                  className="p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-400 md:col-span-2"
+                />
+              </div>
 
               <button
                 onClick={handleUpdateData}
-                className="bg-yellow-400 text-white px-4 py-2 rounded-lg font-semibold hover:bg-yellow-500 transition w-40 hover:cursor-pointer"
+                disabled={loading}
+                className="bg-yellow-400 text-white px-6 py-2 rounded-lg font-semibold hover:bg-yellow-500 transition w-fit"
               >
-                Guardar
+                Guardar cambios
               </button>
             </div>
           )}
 
-          {!isGuest && section === "password" && (
-  <div className="flex flex-col gap-4">
-    <h2 className="text-2xl font-semibold text-gray-800">Cambiar Contraseña</h2>
-    <input
-      type="password"
-      value={password}
-      onChange={(e) => setPassword(e.target.value)}
-      placeholder="Contraseña actual"
-      className="p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400"
-    />
-    <input
-      type="password"
-      value={newPassword}
-      onChange={(e) => setNewPassword(e.target.value)}
-      placeholder="Nueva contraseña"
-      className="p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400"
-    />
-    <input
-      type="password"
-      value={confirmPassword}
-      onChange={(e) => setConfirmPassword(e.target.value)}
-      placeholder="Confirmar nueva contraseña"
-      className="p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400"
-    />
-    <button
-      onClick={handleChangePassword}
-      className="bg-yellow-400 text-white px-4 py-2 rounded-lg font-semibold hover:bg-yellow-500 hover:cursor-pointer transition w-40"
-    >
-      Cambiar
-    </button>
-  </div>
-)}
+
+                    {!isGuest && section === "password" && (
+            <div className="flex flex-col gap-4">
+              <h2 className="text-2xl font-semibold text-gray-800">Cambiar Contraseña</h2>
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Contraseña actual"
+                className="p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400"
+              />
+              <input
+                type="password"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                placeholder="Nueva contraseña"
+                className="p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400"
+              />
+              <input
+                type="password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                placeholder="Confirmar nueva contraseña"
+                className="p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400"
+              />
+              <button
+                onClick={handleChangePassword}
+                className="bg-yellow-400 text-white px-4 py-2 rounded-lg font-semibold hover:bg-yellow-500 hover:cursor-pointer transition w-40"
+              >
+                Cambiar
+              </button>
+            </div>
+          )}
 
 
           {!isGuest && section === "borrar" && (

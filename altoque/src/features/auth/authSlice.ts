@@ -16,10 +16,19 @@ export interface AppUser {
     horario_apertura?: string;
     horario_cierre?: string;
   };
+    direccion?: {
+    _id: string;
+    calle: string;
+    ciudad: string;
+    cp: string;
+    numero: string;
+    provincia: string;
+  };
   cliente?: {
     _id: string;
     nombre: string;
     puntos?: number;
+    telefono?:string; 
   };
   isActive: boolean;
 }
