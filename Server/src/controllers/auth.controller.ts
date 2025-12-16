@@ -15,6 +15,7 @@ const loginSchema = Joi.object({
 export const login = async (req: Request, res: Response) => {
 
   try {
+    
     const { error, value } = loginSchema.validate(req.body);
     if (error) return res.status(400).json({ error: error.details[0].message });
 
