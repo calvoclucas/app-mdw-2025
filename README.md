@@ -16,8 +16,8 @@ El proyecto cumple con la arquitectura **API REST** y utiliza **JWT** para la au
 
 ## 🌐 URLs de despliegue
 
-- **Frontend - Backend (Vercel)**: https://app-mdw-2025.vercel.app/
-
+- **Frontend vercel**: https://app-mdw-2025.vercel.app/
+- **Backend render**: https://app-mdw-2025.onrender.com/
 ---
 
 ## ⚡ Funcionalidades implementadas
