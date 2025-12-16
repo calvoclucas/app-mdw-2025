@@ -21,7 +21,11 @@ dotenv_1.default.config();
 const app = (0, express_1.default)();
 const PORT = process.env.PORT || 3001;
 app.use((0, cors_1.default)({
-    origin: ["http://localhost:5173", "https://app-mdw-2025.onrender.com"],
+    origin: [
+        "http://localhost:5173",
+        "https://app-mdw-2025.onrender.com",
+        "https://app-mdw-2025.vercel.app",
+    ],
     methods: ["GET", "POST", "PUT", "DELETE"],
     allowedHeaders: ["Content-Type", "Authorization"],
     credentials: true,
