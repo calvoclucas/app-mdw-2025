@@ -39,7 +39,7 @@ const Register: React.FC = () => {
       console.log("API Response:", apiResponse.data);
 
       toast.success("¡Registrado correctamente!", { duration: 3000 });
-      navigate("/");
+      navigate("/Login");
     } catch (err: any) {
       if (err.response) {
         setError(
