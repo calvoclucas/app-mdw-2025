@@ -7,6 +7,19 @@ import logo from "../assets/logo_altoque.png";
 const Contact: React.FC = () => {
   const navigate = useNavigate();
 
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) =>{
+    e.preventDefault();
+    const form = e.currentTarget;
+    const nombre = (form[0] as HTMLInputElement).value;
+    const email = (form[1] as HTMLInputElement).value;
+    const mensaje = (form[2] as HTMLInputElement).value;
+
+    const subject = encodeURIComponent(`Mensaje de contacto - ${nombre}`);
+    const body = encodeURIComponent(`Nombre: ${nombre} \n Email: ${email} \n Mensaje:${mensaje}`);
+
+    window.location.href = `mailto:aylen12rodriguez@gmail.com?subject=${subject}&body=${body}`;
+  }
+
   return (
     <div className="min-h-screen flex flex-col justify-between bg-gradient-to-br from-orange-50 via-yellow-50 to-amber-50">
       <header className="bg-white shadow-sm flex items-center justify-between px-6 py-4 sticky top-0 z-50 border-b border-gray-100">
@@ -52,7 +65,7 @@ const Contact: React.FC = () => {
 
           <div className="flex-1 bg-white shadow-lg rounded-xl p-6 flex flex-col justify-center gap-4">
             <h2 className="text-2xl font-semibold text-gray-800 mb-2">Envíanos un mensaje</h2>
-            <form className="flex flex-col gap-4">
+            <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
               <input
                 type="text"
                 placeholder="Tu nombre"
