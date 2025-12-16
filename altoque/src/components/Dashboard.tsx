@@ -47,6 +47,12 @@ interface PexelsResponse {
   }[];
 }
 
+interface PedidoState {
+  mensaje?: string;
+  tiempoEstimado?: number;
+  horaListo?: string;
+}
+
 const API_URL = import.meta.env.VITE_BACKEND_URL;
 
 const genericRestaurantImage =
@@ -142,11 +148,11 @@ const EmpresaCard: React.FC<{
 
 const Dashboard: React.FC = () => {
   const location = useLocation();
-  const state = location.state as { mensaje?: string } | undefined;
+  const state = location.state as PedidoState | undefined;
   const [pedidos, setPedidos] = useState<Pedido[]>([]);
-  //const [pedidoMensaje, setPedidoMensaje] = useState(state?.mensaje || "");
   const [searchTerm, setSearchTerm] = useState("");
   const [filterCategory, setFilterCategory] = useState("");
+  const [pedidoMensaje, setPedidoMensaje] = useState<string | null>(null);
   const [filterOpen, setFilterOpen] = useState("");
   const [favoritos, setFavoritos] = useState<string[]>([]);
   const [showGuestToast, setShowGuestToast] = useState(false);
@@ -161,7 +167,14 @@ const Dashboard: React.FC = () => {
   const [empresas, setEmpresas] = useState<Empresa[]>([]);
   const [imagenes, setImagenes] = useState<{ [key: string]: string }>({});
   const [loading, setLoading] = useState(true);
-  //const isGuest = user?._id === "guest";
+
+  useEffect(() => {
+    if (state?.mensaje) {
+      setPedidoMensaje(state.mensaje);
+      const timer = setTimeout(() => setPedidoMensaje(null), 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [state]);
 
   useEffect(() => {
     if (!user) navigate("/login");
@@ -402,6 +415,19 @@ const Dashboard: React.FC = () => {
             {user?.name || user?.email || "Invitado"}
           </span>
         </h2>
+        {pedidoMensaje && (
+          <div className="fixed top-24 right-10 bg-green-100 border-l-4 border-green-500 text-green-700 p-4 rounded shadow-lg flex items-start gap-3 w-80 animate-slide-in z-50">
+            <div className="flex-1">
+              <p className="font-semibold">{pedidoMensaje}</p>
+              {state?.tiempoEstimado && state?.horaListo && (
+                <p className="text-sm">
+                  Tiempo estimado: {state.tiempoEstimado} min - Listo a las{" "}
+                  {state.horaListo}
+                </p>
+              )}
+            </div>
+          </div>
+        )}
 
         {user?.role !== "empresa" && (
           <div className="mb-6 flex flex-col md:flex-row md:items-center md:gap-4">
