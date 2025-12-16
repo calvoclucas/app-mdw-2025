@@ -36,8 +36,6 @@ const MiPerfil: React.FC = () => {
   const [province, setProvince] = useState(user?.direccion?.provincia || "");
   const [postalCode, setPostalCode] = useState(user?.direccion?.cp || "");
 
-console.log(user);
-
   useEffect(() => {
     if (!user) navigate("/login");
   }, [user, navigate]);
@@ -69,7 +67,7 @@ const handleUpdateData = async () => {
     };
 
     if (role === "cliente") {
-      payload.client = { phone };
+      payload.client = { telefono: phone };
     }
 
     if (role === "empresa") {
