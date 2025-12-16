@@ -13,6 +13,7 @@ const loginSchema = Joi.object({
 });
 
 export const login = async (req: Request, res: Response) => {
+
   try {
     const { error, value } = loginSchema.validate(req.body);
     if (error) return res.status(400).json({ error: error.details[0].message });
@@ -75,7 +76,7 @@ export const login = async (req: Request, res: Response) => {
       }
     }
 
-    res.json({ message: "Login exitoso", user: userResponse });
+    res.json({message: "Login exitoso",user: userResponse,token,});
   } catch (error: any) {
     console.error("Error en login:", error);
     res.status(401).json({ error: "Token inválido o expirado" });

@@ -21,6 +21,7 @@ export interface AppUser {
     nombre: string;
     puntos?: number;
   };
+  isActive: boolean;
 }
 
 interface AuthState {

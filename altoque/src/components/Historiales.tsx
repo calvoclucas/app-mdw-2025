@@ -42,7 +42,7 @@ const token = localStorage.getItem("token");
 
   const handleVerDetalle = async (idPedido: string) => {
     try {
-      const { data } = await axios.get<DetallePedido[]>(`${API_URL}/Api/GetDetallesByPedido/${idPedido}`);
+      const { data } = await axios.get<DetallePedido[]>(`${API_URL}/Api/GetDetallesByPedido/${idPedido}`,  { headers: { authorization: `Bearer ${token}`} });
       setDetalles(data);
       setModalOpen(true);
     } catch (err) {

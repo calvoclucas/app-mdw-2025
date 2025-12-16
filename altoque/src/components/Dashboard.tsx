@@ -52,6 +52,7 @@ const API_URL = import.meta.env.VITE_BACKEND_URL;
 const genericRestaurantImage =
   "https://images.pexels.com/photos/262978/pexels-photo-262978.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2";
 
+/*
 const CardSkeleton: React.FC = () => (
   <div className="bg-white rounded-xl shadow-sm overflow-hidden animate-pulse">
     <div className="w-full h-28 bg-gray-300 rounded-t-xl"></div>
@@ -61,7 +62,7 @@ const CardSkeleton: React.FC = () => (
       <div className="h-3 bg-gray-200 rounded w-5/6"></div>
     </div>
   </div>
-);
+);*/
 
 const EmpresaCard: React.FC<{
   empresa: Empresa;
@@ -142,7 +143,7 @@ const Dashboard: React.FC = () => {
   const location = useLocation();
   const state = location.state as { mensaje?: string } | undefined;
   const [pedidos, setPedidos] = useState<Pedido[]>([]);
-  const [pedidoMensaje, setPedidoMensaje] = useState(state?.mensaje || "");
+  //const [pedidoMensaje, setPedidoMensaje] = useState(state?.mensaje || "");
   const [searchTerm, setSearchTerm] = useState("");
   const [filterCategory, setFilterCategory] = useState("");
   const [filterOpen, setFilterOpen] = useState("");
@@ -159,7 +160,7 @@ const Dashboard: React.FC = () => {
   const [empresas, setEmpresas] = useState<Empresa[]>([]);
   const [imagenes, setImagenes] = useState<{ [key: string]: string }>({});
   const [loading, setLoading] = useState(true);
-  const isGuest = user?._id === "guest";
+  //const isGuest = user?._id === "guest";
 
   useEffect(() => {
     if (!user) navigate("/login");
@@ -217,6 +218,38 @@ const Dashboard: React.FC = () => {
 
     fetchEmpresas();
   }, [user, token, navigate]);
+
+  useEffect(() => {
+  if (!user || user.role !== "empresa" || !token) return;
+
+  const fetchPedidosEmpresa = async () => {
+    setLoading(true);
+    try {
+      const empresaId = user.empresa?._id;
+      if (!empresaId) return;
+      const res = await axios.get<Pedido[]>( `${API_URL}/Api/GetPedidosByEmpresa/${empresaId}`, { headers: { authorization: `Bearer ${token}`, role: 'empresa' } });
+
+
+
+      const pedidosNormalizados: Pedido[] = res.data.map((p) => ({
+        _id: p._id,
+        clienteNombre: p.id_cliente?.nombre || "Cliente desconocido",
+        total: p.total || 0,
+        estado: (p.estado as EstadoPedido) || "pendiente",
+        createdAt: p.createdAt,
+      }));
+
+      setPedidos(pedidosNormalizados);
+    } catch (err) {
+      console.error("Error cargando pedidos de la empresa:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  fetchPedidosEmpresa();
+}, [user, token]);
+
 
   useEffect(() => {
     if (empresas.length === 0) return;
@@ -400,52 +433,50 @@ const Dashboard: React.FC = () => {
         )}
 
         {user?.role === "empresa" && (
-          <div className="flex flex-col gap-6">
-            <EstadisticasEmpresa pedidos={pedidos} />
+  <div className="flex flex-col gap-6">
+    <EstadisticasEmpresa pedidos={pedidos} />
 
-            <h3 className="text-lg font-semibold text-gray-800">
-              Pedidos recientes
-            </h3>
+    <h3 className="text-lg font-semibold text-gray-800">
+      Pedidos recientes
+    </h3>
 
-            {loading ? (
-              <p>Cargando pedidos...</p>
-            ) : pedidos.length === 0 ? (
-              <p>No hay pedidos aún</p>
-            ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {pedidos.map((pedido) => (
-                  <div
-                    key={pedido._id}
-                    className="bg-white shadow rounded-xl p-4"
-                  >
-                    <p className="text-gray-500 text-sm">
-                      Cliente: {pedido.id_cliente?.nombre || "Desconocido"}
-                    </p>
-                    <p className="text-gray-500 text-sm">
-                      Total: ${pedido.total?.toFixed(2)}
-                    </p>
-                    <p className="text-gray-500 text-sm">
-                      Estado: {pedido.estado}
-                    </p>
-                    <p className="text-gray-500 text-sm">
-                      Fecha:{" "}
-                      {pedido.createdAt
-                        ? new Date(pedido.createdAt).toLocaleString()
-                        : "Fecha no disponible"}
-                    </p>
+    {loading ? (
+      <p>Cargando pedidos...</p>
+    ) : pedidos.length === 0 ? (
+      <p>No hay pedidos aún</p>
+    ) : (
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        {pedidos.map((pedido) => (
+          <div key={pedido._id} className="bg-white shadow rounded-xl p-4">
+            <p className="text-gray-500 text-sm">
+              Cliente: {pedido.id_cliente?.nombre}
+            </p>
+            <p className="text-gray-500 text-sm">
+              Total: ${pedido.total?.toFixed(2)}
+            </p>
+            <p className="text-gray-500 text-sm">
+              Estado: {pedido.estado}
+            </p>
+            <p className="text-gray-500 text-sm">
+              Fecha:{" "}
+              {pedido.createdAt
+                ? new Date(pedido.createdAt).toLocaleString()
+                : "Fecha no disponible"}
+            </p>
 
-                    <PedidoDashboardBar
-                      pedido={{
-                        ...pedido,
-                        estado: (pedido.estado as EstadoPedido) || "pendiente",
-                      }}
-                    />
-                  </div>
-                ))}
-              </div>
-            )}
+            <PedidoDashboardBar
+              pedido={{
+                ...pedido,
+                estado: (pedido.estado as EstadoPedido) || "pendiente",
+              }}
+            />
           </div>
-        )}
+        ))}
+      </div>
+    )}
+  </div>
+)}
+
 
         {user?.role !== "empresa" && (
           <>
